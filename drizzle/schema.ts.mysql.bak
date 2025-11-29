@@ -1,18 +1,16 @@
-import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, json, index, serial, unique } from "drizzle-orm/pg-core";
-
-export const roleEnum = pgEnum("role", ["user", "admin"]);
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, index } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
  * Extend this file with additional tables as your product grows.
  * Columns use camelCase to match both database fields and generated types.
  */
-export const users = pgTable("users", {
+export const users = mysqlTable("users", {
   /**
    * Surrogate primary key. Auto-incremented numeric value managed by the database.
    * Use this for relations between tables.
    */
-  id: serial("id").primaryKey(),
+  id: int("id").autoincrement().primaryKey(),
   /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
@@ -20,9 +18,9 @@ export const users = pgTable("users", {
   phone: varchar("phone", { length: 20 }),
   cpf: varchar("cpf", { length: 14 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: roleEnum("role").default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
@@ -32,22 +30,22 @@ export type InsertUser = typeof users.$inferInsert;
 /**
  * Products table - Books for sale
  */
-export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
+export const products = mysqlTable("products", {
+  id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   description: text("description"),
-  priceCents: integer("priceCents").notNull(),
-  compareAtPriceCents: integer("compareAtPriceCents"),
-  stockQuantity: integer("stockQuantity").default(0).notNull(),
-  weightGrams: integer("weightGrams").default(300).notNull(),
+  priceCents: int("priceCents").notNull(),
+  compareAtPriceCents: int("compareAtPriceCents"),
+  stockQuantity: int("stockQuantity").default(0).notNull(),
+  weightGrams: int("weightGrams").default(300).notNull(),
   widthCm: decimal("widthCm", { precision: 5, scale: 2 }).default("14").notNull(),
   heightCm: decimal("heightCm", { precision: 5, scale: 2 }).default("21").notNull(),
   depthCm: decimal("depthCm", { precision: 5, scale: 2 }).default("2").notNull(),
   imageUrl: varchar("imageUrl", { length: 500 }),
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
   activeIdx: index("active_idx").on(table.active),
 }));
@@ -58,9 +56,9 @@ export type InsertProduct = typeof products.$inferInsert;
 /**
  * Addresses table
  */
-export const addresses = pgTable("addresses", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").notNull(),
+export const addresses = mysqlTable("addresses", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
   recipientName: varchar("recipientName", { length: 255 }).notNull(),
   cep: varchar("cep", { length: 10 }).notNull(),
   street: varchar("street", { length: 255 }).notNull(),
@@ -71,7 +69,7 @@ export const addresses = pgTable("addresses", {
   state: varchar("state", { length: 2 }).notNull(),
   isDefault: boolean("isDefault").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
   userIdIdx: index("user_id_idx").on(table.userId),
 }));
@@ -82,14 +80,14 @@ export type InsertAddress = typeof addresses.$inferInsert;
 /**
  * Orders table
  */
-export const orders = pgTable("orders", {
-  id: serial("id").primaryKey(),
-  userId: integer("userId").notNull(),
-  addressId: integer("addressId"),
-  subtotalCents: integer("subtotalCents").notNull(),
-  shippingPriceCents: integer("shippingPriceCents").notNull(),
-  discountCents: integer("discountCents").default(0).notNull(),
-  totalCents: integer("totalCents").notNull(),
+export const orders = mysqlTable("orders", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  addressId: int("addressId"),
+  subtotalCents: int("subtotalCents").notNull(),
+  shippingPriceCents: int("shippingPriceCents").notNull(),
+  discountCents: int("discountCents").default(0).notNull(),
+  totalCents: int("totalCents").notNull(),
   status: mysqlEnum("status", [
     "AGUARDANDO_PAGAMENTO",
     "PAGO",
@@ -105,7 +103,7 @@ export const orders = pgTable("orders", {
   customerNotes: text("customerNotes"),
   adminNotes: text("adminNotes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   paidAt: timestamp("paidAt"),
   shippedAt: timestamp("shippedAt"),
   deliveredAt: timestamp("deliveredAt"),
@@ -121,13 +119,13 @@ export type InsertOrder = typeof orders.$inferInsert;
 /**
  * Order items table
  */
-export const orderItems = pgTable("orderItems", {
-  id: serial("id").primaryKey(),
-  orderId: integer("orderId").notNull(),
-  productId: integer("productId").notNull(),
-  quantity: integer("quantity").default(1).notNull(),
-  unitPriceCents: integer("unitPriceCents").notNull(),
-  totalPriceCents: integer("totalPriceCents").notNull(),
+export const orderItems = mysqlTable("orderItems", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  productId: int("productId").notNull(),
+  quantity: int("quantity").default(1).notNull(),
+  unitPriceCents: int("unitPriceCents").notNull(),
+  totalPriceCents: int("totalPriceCents").notNull(),
   productName: varchar("productName", { length: 255 }).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -138,11 +136,11 @@ export type InsertOrderItem = typeof orderItems.$inferInsert;
 /**
  * Shipments table
  */
-export const shipments = pgTable("shipments", {
-  id: serial("id").primaryKey(),
-  orderId: integer("orderId").notNull().unique(),
+export const shipments = mysqlTable("shipments", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull().unique(),
   shippingMethod: varchar("shippingMethod", { length: 50 }).notNull(),
-  shippingPriceCents: integer("shippingPriceCents").notNull(),
+  shippingPriceCents: int("shippingPriceCents").notNull(),
   trackingCode: varchar("trackingCode", { length: 50 }),
   trackingUrl: varchar("trackingUrl", { length: 500 }),
   status: mysqlEnum("status", [
@@ -155,11 +153,11 @@ export const shipments = pgTable("shipments", {
     "DEVOLVIDO",
   ]).default("PENDENTE").notNull(),
   labelUrl: varchar("labelUrl", { length: 500 }),
-  estimatedDeliveryDays: integer("estimatedDeliveryDays"),
+  estimatedDeliveryDays: int("estimatedDeliveryDays"),
   postedAt: timestamp("postedAt"),
   deliveredAt: timestamp("deliveredAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Shipment = typeof shipments.$inferSelect;
@@ -168,13 +166,13 @@ export type InsertShipment = typeof shipments.$inferInsert;
 /**
  * Payment transactions table
  */
-export const paymentTransactions = pgTable("paymentTransactions", {
-  id: serial("id").primaryKey(),
-  orderId: integer("orderId").notNull(),
+export const paymentTransactions = mysqlTable("paymentTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
   externalId: varchar("externalId", { length: 100 }),
   gateway: varchar("gateway", { length: 50 }).default("pagarme").notNull(),
   method: varchar("method", { length: 50 }).notNull(),
-  amountCents: integer("amountCents").notNull(),
+  amountCents: int("amountCents").notNull(),
   status: mysqlEnum("status", [
     "pending",
     "processing",
@@ -186,7 +184,7 @@ export const paymentTransactions = pgTable("paymentTransactions", {
   ]).default("pending").notNull(),
   gatewayResponse: json("gatewayResponse"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type PaymentTransaction = typeof paymentTransactions.$inferSelect;
