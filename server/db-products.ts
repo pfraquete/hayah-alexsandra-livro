@@ -5,14 +5,14 @@ import { products, orders, orderItems, addresses, users, shipments, type InsertO
 export async function getActiveProducts() {
   const db = await getDb();
   if (!db) return [];
-  
+
   return await db.select().from(products).where(eq(products.active, true));
 }
 
 export async function getProductBySlug(slug: string) {
   const db = await getDb();
   if (!db) return null;
-  
+
   const result = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -20,7 +20,7 @@ export async function getProductBySlug(slug: string) {
 export async function getProductById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  
+
   const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -28,7 +28,7 @@ export async function getProductById(id: number) {
 export async function createOrder(orderData: InsertOrder) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db.insert(orders).values(orderData);
   return Number(result[0].insertId);
 }
@@ -36,14 +36,14 @@ export async function createOrder(orderData: InsertOrder) {
 export async function createOrderItems(items: InsertOrderItem[]) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   await db.insert(orderItems).values(items);
 }
 
 export async function createAddress(addressData: InsertAddress) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db.insert(addresses).values(addressData);
   return Number(result[0].insertId);
 }
@@ -51,21 +51,21 @@ export async function createAddress(addressData: InsertAddress) {
 export async function getUserAddresses(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  
+
   return await db.select().from(addresses).where(eq(addresses.userId, userId));
 }
 
 export async function getUserOrders(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  
+
   return await db.select().from(orders).where(eq(orders.userId, userId));
 }
 
 export async function getOrderById(orderId: number) {
   const db = await getDb();
   if (!db) return null;
-  
+
   const result = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -201,4 +201,21 @@ export async function getOrderWithTracking(orderId: number, userId: number) {
     items,
     shipment: shipmentResult.length > 0 ? shipmentResult[0] : null,
   };
+}
+
+export async function decrementProductStock(productId: number, quantity: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const product = await getProductById(productId);
+  if (!product) throw new Error("Product not found");
+
+  if (product.stockQuantity < quantity) {
+    throw new Error("Insufficient stock");
+  }
+
+  await db
+    .update(products)
+    .set({ stockQuantity: product.stockQuantity - quantity })
+    .where(eq(products.id, productId));
 }

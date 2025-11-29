@@ -42,36 +42,37 @@ export function FAQ() {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-pink-50 to-purple-50">
+    <section className="py-20 relative overflow-hidden">
+      <div className="absolute inset-0 mesh-gradient opacity-10 -z-10" />
       <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto animate-fade-in-up">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Perguntas Frequentes</h2>
-            <p className="text-xl text-gray-600">
+            <h2 className="text-4xl font-bold mb-4 text-foreground">Perguntas Frequentes</h2>
+            <p className="text-xl text-muted-foreground">
               Tire suas dúvidas sobre o livro e o processo de compra
             </p>
           </div>
-          
-          <div className="bg-white rounded-2xl shadow-lg p-6 lg:p-8">
+
+          <div className="glass-card rounded-2xl p-6 lg:p-8">
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="text-left font-semibold">
+                <AccordionItem key={index} value={`item-${index}`} className="border-b border-border/50 last:border-0">
+                  <AccordionTrigger className="text-left font-semibold text-foreground hover:text-primary transition-colors py-4">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-gray-600 leading-relaxed">
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-4">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
           </div>
-          
+
           <div className="mt-8 text-center">
-            <p className="text-gray-600 mb-4">Ainda tem dúvidas?</p>
-            <a 
-              href="mailto:contato@hayahlivros.com.br" 
-              className="text-pink-600 hover:text-pink-700 font-semibold"
+            <p className="text-muted-foreground mb-4">Ainda tem dúvidas?</p>
+            <a
+              href="mailto:contato@hayahlivros.com.br"
+              className="text-primary hover:text-primary/80 font-semibold transition-colors"
             >
               Entre em contato conosco
             </a>

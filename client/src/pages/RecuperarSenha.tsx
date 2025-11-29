@@ -37,56 +37,55 @@ export default function RecuperarSenha() {
 
   if (emailSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">E-mail Enviado!</CardTitle>
-            <CardDescription className="text-center">
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
+        <div className="absolute inset-0 mesh-gradient opacity-20 -z-10" />
+        <div className="w-full max-w-md glass-card rounded-2xl p-8 animate-scale-in">
+          <div className="space-y-4 text-center mb-6">
+            <h1 className="text-2xl font-bold">E-mail Enviado!</h1>
+            <p className="text-muted-foreground">
               Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button
-              onClick={() => setLocation('/login')}
-              className="w-full"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar para o Login
-            </Button>
-          </CardFooter>
-        </Card>
+            </p>
+          </div>
+          <Button
+            onClick={() => setLocation('/login')}
+            className="w-full shadow-soft hover:shadow-soft-lg"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar para o Login
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Recuperar Senha</CardTitle>
-          <CardDescription className="text-center">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
+      <div className="absolute inset-0 mesh-gradient opacity-20 -z-10" />
+      <div className="w-full max-w-md glass-card rounded-2xl p-8 animate-scale-in">
+        <div className="space-y-1 mb-6">
+          <h1 className="text-2xl font-bold text-center">Recuperar Senha</h1>
+          <p className="text-center text-muted-foreground">
             Digite seu e-mail para receber instruções de recuperação
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isSubmitting || loading}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email">E-mail</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isSubmitting || loading}
+              className="bg-white/50 border-primary/10 focus:border-primary/30"
+            />
+          </div>
+          <div className="flex flex-col space-y-4">
             <Button
               type="submit"
-              className="w-full"
+              className="w-full shadow-soft hover:shadow-soft-lg"
               disabled={isSubmitting || loading}
             >
               {isSubmitting || loading ? (
@@ -101,15 +100,15 @@ export default function RecuperarSenha() {
             <Button
               type="button"
               variant="ghost"
-              className="w-full"
+              className="w-full hover:bg-primary/5 hover:text-primary"
               onClick={() => setLocation('/login')}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar para o Login
             </Button>
-          </CardFooter>
+          </div>
         </form>
-      </Card>
+      </div>
     </div>
   );
 }

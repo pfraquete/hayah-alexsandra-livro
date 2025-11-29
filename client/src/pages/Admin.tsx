@@ -123,14 +123,14 @@ export default function Admin() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-pink-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary/30 to-background p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Acesso Negado</CardTitle>
@@ -178,7 +178,8 @@ export default function Admin() {
   const totalStock = products?.reduce((sum, p) => sum + p.stockQuantity, 0) || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 py-8">
+    <div className="min-h-screen relative overflow-hidden py-8">
+      <div className="absolute inset-0 mesh-gradient opacity-20 -z-10" />
       <div className="container mx-auto px-4">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
@@ -192,52 +193,60 @@ export default function Admin() {
 
           {/* Dashboard Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card>
+            <Card className="glass-card border-l-4 border-l-green-500">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Receita Total</p>
+                    <p className="text-sm text-muted-foreground font-medium">Receita Total</p>
                     <p className="text-2xl font-bold text-green-600">
                       R$ {(totalRevenue / 100).toFixed(2)}
                     </p>
                   </div>
-                  <DollarSign className="h-10 w-10 text-green-600 opacity-20" />
+                  <div className="p-3 bg-green-100/50 rounded-full">
+                    <DollarSign className="h-6 w-6 text-green-600" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="glass-card border-l-4 border-l-blue-500">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Pedidos Pagos</p>
+                    <p className="text-sm text-muted-foreground font-medium">Pedidos Pagos</p>
                     <p className="text-2xl font-bold text-blue-600">{paidOrders}</p>
                   </div>
-                  <TrendingUp className="h-10 w-10 text-blue-600 opacity-20" />
+                  <div className="p-3 bg-blue-100/50 rounded-full">
+                    <TrendingUp className="h-6 w-6 text-blue-600" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="glass-card border-l-4 border-l-orange-500">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Aguardando Pagamento</p>
+                    <p className="text-sm text-muted-foreground font-medium">Aguardando Pagamento</p>
                     <p className="text-2xl font-bold text-orange-600">{pendingOrders}</p>
                   </div>
-                  <Package className="h-10 w-10 text-orange-600 opacity-20" />
+                  <div className="p-3 bg-orange-100/50 rounded-full">
+                    <Package className="h-6 w-6 text-orange-600" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="glass-card border-l-4 border-l-purple-500">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Estoque Total</p>
+                    <p className="text-sm text-muted-foreground font-medium">Estoque Total</p>
                     <p className="text-2xl font-bold text-purple-600">{totalStock} un.</p>
                   </div>
-                  <ShoppingBag className="h-10 w-10 text-purple-600 opacity-20" />
+                  <div className="p-3 bg-purple-100/50 rounded-full">
+                    <ShoppingBag className="h-6 w-6 text-purple-600" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -261,7 +270,7 @@ export default function Admin() {
 
             {/* Orders Tab */}
             <TabsContent value="orders">
-              <Card>
+              <Card className="glass-card">
                 <CardHeader>
                   <CardTitle>Gerenciar Pedidos</CardTitle>
                   <CardDescription>
@@ -271,7 +280,7 @@ export default function Admin() {
                 <CardContent>
                   {loadingOrders ? (
                     <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-8 w-8 animate-spin text-pink-600" />
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : orders && orders.length > 0 ? (
                     <div className="rounded-md border overflow-x-auto">
@@ -305,8 +314,8 @@ export default function Admin() {
                                 <TableCell>
                                   <Badge variant="outline">
                                     {order.paymentMethod === 'pix' ? 'PIX' :
-                                     order.paymentMethod === 'credit_card' ? 'Cartão' :
-                                     order.paymentMethod === 'boleto' ? 'Boleto' : '-'}
+                                      order.paymentMethod === 'credit_card' ? 'Cartão' :
+                                        order.paymentMethod === 'boleto' ? 'Boleto' : '-'}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
@@ -375,7 +384,7 @@ export default function Admin() {
 
             {/* Products Tab */}
             <TabsContent value="products">
-              <Card>
+              <Card className="glass-card">
                 <CardHeader>
                   <CardTitle>Gerenciar Produtos</CardTitle>
                   <CardDescription>
@@ -385,7 +394,7 @@ export default function Admin() {
                 <CardContent>
                   {loadingProducts ? (
                     <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-8 w-8 animate-spin text-pink-600" />
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : products && products.length > 0 ? (
                     <div className="rounded-md border">
@@ -465,7 +474,7 @@ export default function Admin() {
 
             {/* Users Tab */}
             <TabsContent value="users">
-              <Card>
+              <Card className="glass-card">
                 <CardHeader>
                   <CardTitle>Usuários Cadastrados</CardTitle>
                   <CardDescription>
@@ -475,7 +484,7 @@ export default function Admin() {
                 <CardContent>
                   {loadingUsers ? (
                     <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-8 w-8 animate-spin text-pink-600" />
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : users && users.length > 0 ? (
                     <div className="rounded-md border">
@@ -689,7 +698,7 @@ export default function Admin() {
                   <span className="text-muted-foreground">Frete:</span> R$ {(orderDetails.shippingPriceCents / 100).toFixed(2)}
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-bold text-pink-600">
+                  <span className="text-lg font-bold text-primary">
                     Total: R$ {(orderDetails.totalCents / 100).toFixed(2)}
                   </span>
                 </div>
@@ -704,7 +713,7 @@ export default function Admin() {
             </div>
           ) : (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           )}
         </DialogContent>

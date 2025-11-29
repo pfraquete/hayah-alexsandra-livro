@@ -34,16 +34,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Entrar</CardTitle>
-          <CardDescription className="text-center">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
+      <div className="absolute inset-0 mesh-gradient opacity-20 -z-10" />
+      <div className="w-full max-w-md glass-card rounded-2xl p-8 animate-scale-in">
+        <div className="space-y-1 mb-6">
+          <h1 className="text-2xl font-bold text-center">Entrar</h1>
+          <p className="text-center text-muted-foreground">
             Entre com seu e-mail e senha para acessar sua conta
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
@@ -54,6 +55,7 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isSubmitting || loading}
+                className="bg-white/50 border-primary/10 focus:border-primary/30"
               />
             </div>
             <div className="space-y-2">
@@ -66,21 +68,25 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isSubmitting || loading}
+                className="bg-white/50 border-primary/10 focus:border-primary/30"
               />
             </div>
-            <Button
-              type="button"
-              variant="link"
-              className="px-0 text-sm"
-              onClick={() => setLocation('/recuperar-senha')}
-            >
-              Esqueceu sua senha?
-            </Button>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="link"
+                className="px-0 text-sm h-auto font-normal text-muted-foreground hover:text-primary"
+                onClick={() => setLocation('/recuperar-senha')}
+              >
+                Esqueceu sua senha?
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col space-y-4 pt-4">
             <Button
               type="submit"
-              className="w-full"
+              className="w-full shadow-soft hover:shadow-soft-lg"
               disabled={isSubmitting || loading}
             >
               {isSubmitting || loading ? (
@@ -97,15 +103,15 @@ export default function Login() {
               <Button
                 type="button"
                 variant="link"
-                className="px-0"
+                className="px-0 font-semibold text-primary hover:text-primary/80"
                 onClick={() => setLocation('/cadastro')}
               >
                 Cadastre-se
               </Button>
             </div>
-          </CardFooter>
+          </div>
         </form>
-      </Card>
+      </div>
     </div>
   );
 }

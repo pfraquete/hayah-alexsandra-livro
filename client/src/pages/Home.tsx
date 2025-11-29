@@ -22,7 +22,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-pink-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -30,28 +30,48 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-white/10 backdrop-blur-md supports-[backdrop-filter]:bg-white/5 transition-all duration-300">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-pink-600">Hayah Livros</h1>
-          <div className="flex gap-2 items-center">
+          <h1 className="text-2xl font-bold text-gradient cursor-pointer" onClick={() => setLocation('/')}>Hayah Livros</h1>
+          <div className="flex gap-3 items-center">
             {isAuthenticated ? (
               <>
-                <span className="text-sm text-muted-foreground mr-2 hidden sm:inline">
-                  Olá, {user?.user_metadata?.name || user?.email}
+                <span className="text-sm font-medium text-foreground/80 mr-2 hidden sm:inline">
+                  Olá, {user?.user_metadata?.name?.split(' ')[0] || 'Leitora'}
                 </span>
-                <Button onClick={() => setLocation('/minha-conta/pedidos')} variant="outline" size="sm">
+                <Button
+                  onClick={() => setLocation('/minha-conta/pedidos')}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
+                >
                   Meus Pedidos
                 </Button>
-                <Button onClick={handleLogout} variant="ghost" size="sm">
+                <Button
+                  onClick={handleLogout}
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
+                >
                   Sair
                 </Button>
               </>
             ) : (
               <>
-                <Button onClick={() => setLocation('/login')} variant="ghost" size="sm">
+                <Button
+                  onClick={() => setLocation('/login')}
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full hover:bg-primary/5 hover:text-primary transition-colors font-medium"
+                >
                   Entrar
                 </Button>
-                <Button onClick={() => setLocation('/cadastro')} className="bg-pink-600 hover:bg-pink-700" size="sm">
+                <Button
+                  onClick={() => setLocation('/cadastro')}
+                  size="sm"
+                  className="rounded-full shadow-soft hover:shadow-soft-lg transition-all hover:-translate-y-0.5"
+                >
                   Cadastrar
                 </Button>
               </>

@@ -191,7 +191,7 @@ export function AIChatBox({
     <div
       ref={containerRef}
       className={cn(
-        "flex flex-col bg-card text-card-foreground rounded-lg border shadow-sm",
+        "flex flex-col glass-card rounded-2xl border-white/20 shadow-xl overflow-hidden",
         className
       )}
       style={{ height }}
@@ -213,7 +213,7 @@ export function AIChatBox({
                       key={index}
                       onClick={() => onSendMessage(prompt)}
                       disabled={isLoading}
-                      className="rounded-lg border border-border bg-card px-4 py-2 text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-xl border border-white/20 bg-white/40 px-4 py-2 text-sm transition-all hover:bg-white/60 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 backdrop-blur-sm"
                     >
                       {prompt}
                     </button>
@@ -247,17 +247,17 @@ export function AIChatBox({
                     }
                   >
                     {message.role === "assistant" && (
-                      <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
                         <Sparkles className="size-4 text-primary" />
                       </div>
                     )}
 
                     <div
                       className={cn(
-                        "max-w-[80%] rounded-lg px-4 py-2.5",
+                        "max-w-[80%] rounded-2xl px-5 py-3 shadow-sm",
                         message.role === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-foreground"
+                          ? "bg-primary text-primary-foreground rounded-tr-none"
+                          : "bg-white/60 backdrop-blur-sm text-foreground border border-white/20 rounded-tl-none"
                       )}
                     >
                       {message.role === "assistant" ? (
@@ -272,7 +272,7 @@ export function AIChatBox({
                     </div>
 
                     {message.role === "user" && (
-                      <div className="size-8 shrink-0 mt-1 rounded-full bg-secondary flex items-center justify-center">
+                      <div className="size-8 shrink-0 mt-1 rounded-full bg-secondary flex items-center justify-center shadow-sm">
                         <User className="size-4 text-secondary-foreground" />
                       </div>
                     )}
@@ -306,7 +306,7 @@ export function AIChatBox({
       <form
         ref={inputAreaRef}
         onSubmit={handleSubmit}
-        className="flex gap-2 p-4 border-t bg-background/50 items-end"
+        className="flex gap-2 p-4 border-t border-white/10 bg-white/5 backdrop-blur-md items-end rounded-b-2xl"
       >
         <Textarea
           ref={textareaRef}
@@ -314,14 +314,14 @@ export function AIChatBox({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="flex-1 max-h-32 resize-none min-h-9"
+          className="flex-1 max-h-32 resize-none min-h-9 bg-white/50 border-white/20 focus:border-primary/50 focus:ring-primary/20"
           rows={1}
         />
         <Button
           type="submit"
           size="icon"
           disabled={!input.trim() || isLoading}
-          className="shrink-0 h-[38px] w-[38px]"
+          className="shrink-0 h-[38px] w-[38px] shadow-soft hover:shadow-soft-lg transition-all"
         >
           {isLoading ? (
             <Loader2 className="size-4 animate-spin" />

@@ -25,35 +25,37 @@ export function AboutBook() {
   ];
 
   return (
-    <section id="sobre-livro" className="py-20 bg-white">
+    <section id="sobre-livro" className="py-20 bg-background relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-1/3 h-full bg-primary/5 blur-3xl -z-10" />
       <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">Sobre o Livro</h2>
-          <p className="text-xl text-gray-600">
-            Um guia transformador que combina sabedoria ancestral com estratégias modernas 
+        <div className="max-w-3xl mx-auto text-center mb-16 animate-fade-in-up">
+          <h2 className="text-4xl font-bold mb-4 text-foreground">Sobre o Livro</h2>
+          <p className="text-xl text-muted-foreground">
+            Um guia transformador que combina sabedoria ancestral com estratégias modernas
             para ajudar mulheres a prosperarem em todas as áreas da vida.
           </p>
         </div>
-        
+
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <div 
+              <div
                 key={index}
-                className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-xl p-6 hover:shadow-lg transition-shadow"
+                className="glass-card p-8 rounded-2xl hover:-translate-y-1 transition-all duration-300"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="bg-pink-600 text-white w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                  <Icon className="h-6 w-6" />
+                <div className="bg-primary/10 text-primary w-14 h-14 rounded-full flex items-center justify-center mb-6">
+                  <Icon className="h-7 w-7" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <h3 className="text-xl font-semibold mb-3 text-foreground">{feature.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
               </div>
             );
           })}
         </div>
-        
-        <div className="mt-16 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl p-8 lg:p-12 text-white">
+
+        <div className="mt-16 bg-gradient-to-br from-primary to-purple-600 rounded-3xl p-8 lg:p-12 text-primary-foreground shadow-soft-lg animate-fade-in-up">
           <div className="grid lg:grid-cols-2 gap-8 items-center">
             <div>
               <h3 className="text-3xl font-bold mb-4">O que você vai aprender</h3>
@@ -90,12 +92,12 @@ export function AboutBook() {
                 </li>
               </ul>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 border border-white/10">
               <div className="text-5xl font-bold mb-2">280</div>
-              <div className="text-xl mb-4">Páginas de Conteúdo Transformador</div>
+              <div className="text-xl mb-4 opacity-90">Páginas de Conteúdo Transformador</div>
               <div className="border-t border-white/20 pt-4 mt-4">
                 <div className="text-3xl font-bold mb-2">12</div>
-                <div className="text-lg">Capítulos Práticos</div>
+                <div className="text-lg opacity-90">Capítulos Práticos</div>
               </div>
             </div>
           </div>

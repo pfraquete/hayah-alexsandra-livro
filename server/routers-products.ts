@@ -16,6 +16,7 @@ import {
   updateAddress,
   deleteAddress,
   getOrderWithTracking,
+  decrementProductStock,
 } from "./db-products";
 import { trackShipment } from "./services/tracking";
 import {
@@ -26,12 +27,13 @@ import {
   type PaymentResult
 } from "./services/pagarme";
 import { sendEmail, orderConfirmationEmail } from "./services/email";
+import { calculateShipping as calculateMelhorEnvioShipping } from "./services/melhor-envio";
 
 export const productsRouter = router({
   list: publicProcedure.query(async () => {
     return await getActiveProducts();
   }),
-  
+
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
@@ -47,29 +49,40 @@ export const checkoutRouter = router({
       quantity: z.number(),
     }))
     .mutation(async ({ input }) => {
-      // Simulação de cálculo de frete
-      // TODO: Integrar com API do Melhor Envio ou Correios
-      const basePrice = 1500; // R$ 15,00
-      const days = Math.floor(Math.random() * 10) + 5; // 5-15 dias
-      
-      return {
-        options: [
-          {
-            name: 'PAC',
-            priceCents: basePrice,
-            deliveryDays: days + 5,
-            code: 'PAC',
-          },
-          {
-            name: 'SEDEX',
-            priceCents: basePrice + 1000, // R$ 10,00 a mais
-            deliveryDays: days,
-            code: 'SEDEX',
-          },
-        ],
-      };
+      const product = await getProductById(input.productId);
+      if (!product) {
+        throw new Error('Produto não encontrado');
+      }
+
+      try {
+        const shippingOptions = await calculateMelhorEnvioShipping({
+          to_postal_code: input.cep,
+          items: [{
+            id: String(product.id),
+            width: Number(product.widthCm),
+            height: Number(product.heightCm),
+            length: Number(product.depthCm),
+            weight: product.weightGrams / 1000, // Convert to kg
+            insurance_value: product.priceCents / 100, // Convert to BRL
+            quantity: input.quantity,
+          }],
+        });
+
+        return {
+          options: shippingOptions.map(opt => ({
+            name: opt.company.name + ' - ' + opt.name,
+            priceCents: Math.round(parseFloat(opt.custom_price) * 100),
+            deliveryDays: opt.custom_delivery_time,
+            code: String(opt.id), // Using service ID as code
+          })),
+        };
+      } catch (error) {
+        console.error("Erro ao calcular frete:", error);
+        // Fallback or rethrow
+        throw new Error("Erro ao calcular frete. Verifique o CEP e tente novamente.");
+      }
     }),
-  
+
   createOrder: protectedProcedure
     .input(z.object({
       productId: z.number(),
@@ -100,18 +113,21 @@ export const checkoutRouter = router({
       if (!product.active) {
         throw new Error('Produto não disponível para venda');
       }
-      
+
+      // Verificar estoque e decrementar
+      await decrementProductStock(product.id, input.quantity);
+
       // Calcular valores
       const subtotalCents = product.priceCents * input.quantity;
       const totalCents = subtotalCents + input.shippingPriceCents;
-      
+
       // Criar endereço
       const addressId = await createAddress({
         userId: ctx.user.id,
         ...input.address,
         isDefault: false,
       });
-      
+
       // Criar pedido
       const orderId = await createOrder({
         userId: ctx.user.id,
@@ -130,7 +146,7 @@ export const checkoutRouter = router({
         deliveredAt: null,
         cancelledAt: null,
       });
-      
+
       // Criar itens do pedido
       await createOrderItems([{
         orderId,
