@@ -33,7 +33,7 @@ export function CTA() {
             <Button
               size="lg"
               className="bg-white text-primary hover:bg-white/90 text-lg px-12 py-8 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 font-bold"
-              onClick={() => setLocation('/checkout')}
+              onClick={() => setLocation('/produto')}
             >
               Comprar Agora
               <ArrowRight className="ml-2 h-6 w-6" />

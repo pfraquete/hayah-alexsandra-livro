@@ -12,6 +12,7 @@ import Checkout from "./pages/Checkout";
 import MinhaContaPedidos from "./pages/MinhaContaPedidos";
 import DetalhesPedido from "./pages/DetalhesPedido";
 import Admin from "./pages/Admin";
+import Produto from "./pages/Produto";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path={"/login"} component={Login} />
       <Route path={"/cadastro"} component={Cadastro} />
       <Route path={"/recuperar-senha"} component={RecuperarSenha} />
+      <Route path={"/produto"} component={Produto} />
       <Route path={"/checkout"} component={Checkout} />
       <Route path={"/minha-conta/pedidos"} component={MinhaContaPedidos} />
       <Route path={"/minha-conta/pedidos/:id"} component={DetalhesPedido} />

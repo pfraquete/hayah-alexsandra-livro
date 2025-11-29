@@ -35,7 +35,7 @@ export function Hero() {
               <Button
                 size="lg"
                 className="text-lg px-8 py-6 rounded-full shadow-soft-lg hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-1"
-                onClick={() => setLocation('/checkout')}
+                onClick={() => setLocation('/produto')}
               >
                 Comprar Agora
                 <ArrowRight className="ml-2 h-5 w-5" />
