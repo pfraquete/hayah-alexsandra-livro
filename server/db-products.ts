@@ -29,8 +29,8 @@ export async function createOrder(orderData: InsertOrder) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(orders).values(orderData);
-  return Number(result[0].insertId);
+  const result = await db.insert(orders).values(orderData).returning({ id: orders.id });
+  return result[0].id;
 }
 
 export async function createOrderItems(items: InsertOrderItem[]) {
@@ -44,8 +44,8 @@ export async function createAddress(addressData: InsertAddress) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(addresses).values(addressData);
-  return Number(result[0].insertId);
+  const result = await db.insert(addresses).values(addressData).returning({ id: addresses.id });
+  return result[0].id;
 }
 
 export async function getUserAddresses(userId: number) {
