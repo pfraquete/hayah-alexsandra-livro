@@ -35,7 +35,7 @@ export default function Produto() {
     data: shippingOptions,
     isLoading: loadingShipping,
     refetch: calculateShipping,
-  } = trpc.products.calculateShipping.useQuery(
+  } = trpc.checkout.calculateShipping.useQuery(
     {
       productId: product?.id || 0,
       quantity,
