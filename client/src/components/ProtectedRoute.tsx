@@ -1,5 +1,5 @@
-import { ReactNode, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { ReactNode } from 'react';
+import { Redirect } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -26,20 +26,7 @@ export function ProtectedRoute({
   redirectTo = '/login',
   authenticatedRedirectTo = '/',
 }: ProtectedRouteProps) {
-  const [, setLocation] = useLocation();
   const { isAuthenticated, loading } = useAuth();
-
-  useEffect(() => {
-    if (loading) return;
-
-    if (redirectIfAuthenticated && isAuthenticated) {
-      // User is authenticated but shouldn't be on this page (e.g., login page)
-      setLocation(authenticatedRedirectTo);
-    } else if (!redirectIfAuthenticated && !isAuthenticated) {
-      // User is not authenticated but should be
-      setLocation(redirectTo);
-    }
-  }, [isAuthenticated, loading, redirectIfAuthenticated, redirectTo, authenticatedRedirectTo, setLocation]);
 
   // Show loading state while checking authentication
   if (loading) {
@@ -50,30 +37,20 @@ export function ProtectedRoute({
     );
   }
 
-  // Prevent flash of content while redirecting
-  if (redirectIfAuthenticated && isAuthenticated) {
-    return null;
+  // For auth pages (login, register): redirect TO home if already authenticated
+  if (redirectIfAuthenticated) {
+    if (isAuthenticated) {
+      return <Redirect to={authenticatedRedirectTo} />;
+    }
+    // Not authenticated, show the auth page (login/register)
+    return <>{children}</>;
   }
 
-  if (!redirectIfAuthenticated && !isAuthenticated) {
-    return null;
+  // For protected pages: redirect TO login if not authenticated
+  if (!isAuthenticated) {
+    return <Redirect to={redirectTo} />;
   }
 
+  // Authenticated, show the protected content
   return <>{children}</>;
-}
-
-/**
- * HOC version for wrapping route components
- */
-export function withProtectedRoute<P extends object>(
-  Component: React.ComponentType<P>,
-  options?: Omit<ProtectedRouteProps, 'children'>
-) {
-  return function ProtectedComponent(props: P) {
-    return (
-      <ProtectedRoute {...options}>
-        <Component {...props} />
-      </ProtectedRoute>
-    );
-  };
 }
