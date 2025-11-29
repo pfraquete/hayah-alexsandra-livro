@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { productsRouter, checkoutRouter, ordersRouter } from "./routers-products";
+import { productsRouter, checkoutRouter, ordersRouter, profileRouter, addressRouter } from "./routers-products";
 import { adminRouter } from "./routers-admin";
 
 export const appRouter = router({
@@ -22,6 +22,8 @@ export const appRouter = router({
   products: productsRouter,
   checkout: checkoutRouter,
   orders: ordersRouter,
+  profile: profileRouter,
+  addresses: addressRouter,
   admin: adminRouter,
 });
 
