@@ -1,4 +1,4 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,7 +19,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
@@ -70,7 +69,7 @@ export default function DashboardLayout({
           </div>
           <Button
             onClick={() => {
-              window.location.href = getLoginUrl();
+              window.location.href = "/login";
             }}
             size="lg"
             className="w-full shadow-lg hover:shadow-xl transition-all"
@@ -106,7 +105,7 @@ function DashboardLayoutContent({
   children,
   setSidebarWidth,
 }: DashboardLayoutContentProps) {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -210,12 +209,12 @@ function DashboardLayoutContent({
                 <button className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/10 transition-all w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring border border-transparent hover:border-white/10">
                   <Avatar className="h-9 w-9 border-2 border-white/20 shrink-0 shadow-sm">
                     <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-primary/20 to-purple-500/20 text-primary">
-                      {user?.name?.charAt(0).toUpperCase()}
+                      {(user?.user_metadata?.name || user?.email)?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none text-foreground/90">
-                      {user?.name || "-"}
+                      {user?.user_metadata?.name || "-"}
                     </p>
                     <p className="text-xs text-muted-foreground truncate mt-1.5">
                       {user?.email || "-"}
@@ -225,7 +224,7 @@ function DashboardLayoutContent({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 glass-card border-white/20">
                 <DropdownMenuItem
-                  onClick={logout}
+                  onClick={signOut}
                   className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg m-1"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
