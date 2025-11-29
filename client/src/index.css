@@ -45,38 +45,58 @@
 }
 
 :root {
-  /* User requested palette */
-  --rosa-principal: #e873a5;
-  --rosa-claro: #fde7ef;
-  --rosa-nude: #f9ded4;
-  --branco-rosado: #fff7fa;
-  --texto-escuro: #2a1e2b;
-  --texto-suave: #5a4a5d;
+  /* Paleta Oficial */
+  --rosa-principal: #D85C85;
+  --rosa-profundo: #C5426F;
+  --rosa-claro: #F5D6DE;
+  --rosa-pastel: #FDEBF0;
+  --preto-suave: #1A1A1A;
+  --branco: #FFFFFF;
 
-  /* System mappings */
-  --primary: var(--rosa-principal);
-  --primary-foreground: #ffffff;
+  /* Mapeamento para Shadcn/Tailwind */
+  --background: 0 0% 100%;
+  /* #FFFFFF */
+  --foreground: 0 0% 10%;
+  /* #1A1A1A */
 
-  --sidebar-primary: var(--rosa-principal);
-  --sidebar-primary-foreground: #ffffff;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
 
-  --chart-1: var(--rosa-principal);
-  --chart-2: #f09bc0;
-  --chart-3: #f5b8d5;
-  --chart-4: #fad5e6;
-  --chart-5: #fde7ef;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+
+  --primary: 340 60% 60%;
+  /* #D85C85 converted to HSL approx */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 340 60% 90%;
+  /* #F5D6DE approx */
+  --secondary-foreground: 340 60% 30%;
+
+  --muted: 340 20% 96%;
+  --muted-foreground: 340 10% 40%;
+
+  --accent: 340 60% 95%;
+  /* #FDEBF0 approx */
+  --accent-foreground: 340 60% 40%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 340 20% 90%;
+  --input: 340 20% 90%;
+  --ring: 340 60% 60%;
 
   --radius: 0.75rem;
 
-  --background: var(--branco-rosado);
-  --foreground: var(--texto-escuro);
+  /* Custom Variables for easy usage */
+  --texto-escuro: var(--preto-suave);
+  --texto-suave: #4A4A4A;
 
-  --card: #ffffff;
   --card-foreground: var(--texto-escuro);
 
   --popover: #ffffff;
   --popover-foreground: var(--texto-escuro);
-
   --secondary: var(--rosa-claro);
   --secondary-foreground: var(--rosa-principal);
 

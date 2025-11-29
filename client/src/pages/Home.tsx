@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, User } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { Hero } from '@/components/landing/Hero';
 import { AboutBook } from '@/components/landing/AboutBook';
@@ -34,50 +34,51 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans text-[var(--texto-escuro)]">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[var(--rosa-nude)]/30 transition-all duration-300">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-serif font-bold text-[var(--rosa-principal)] cursor-pointer" onClick={() => setLocation('/')}>Hayah Livros</h1>
-          <div className="flex gap-3 items-center">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[var(--rosa-claro)] transition-all duration-300 shadow-sm">
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+          <div className="flex items-center gap-4 cursor-pointer" onClick={() => setLocation('/')}>
+            <img
+              src="/assets/images/hayah-logo.png"
+              alt="Hayah Livros"
+              className="h-10 object-contain"
+            />
+            <div className="hidden md:block h-8 w-px bg-[var(--rosa-claro)]"></div>
+            <span className="hidden md:block text-sm font-medium text-[var(--texto-suave)] tracking-wide uppercase">
+              Empreendedoras do Reino
+            </span>
+          </div>
+
+          <nav className="hidden md:flex items-center gap-8">
+            <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">Início</a>
+            <a href="#sobre-autora" className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">Sobre a Autora</a>
+            <a href="#sobre-livro" className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">O Livro</a>
+            <Button
+              onClick={() => document.getElementById('oferta')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-[var(--rosa-principal)] hover:bg-[var(--rosa-profundo)] text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all"
+            >
+              Comprar
+            </Button>
+          </nav>
+
+          <div className="flex gap-3 items-center md:hidden">
             {isAuthenticated ? (
-              <>
-                <span className="text-sm font-medium text-[var(--texto-suave)] mr-2 hidden sm:inline">
-                  Olá, {user?.user_metadata?.name?.split(' ')[0] || 'Leitora'}
-                </span>
-                <Button
-                  onClick={() => setLocation('/minha-conta/pedidos')}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full border-[var(--rosa-principal)]/20 text-[var(--rosa-principal)] hover:bg-[var(--rosa-principal)]/5 transition-colors"
-                >
-                  Meus Pedidos
-                </Button>
-                <Button
-                  onClick={handleLogout}
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full text-[var(--texto-suave)] hover:bg-red-50 hover:text-red-500 transition-colors"
-                >
-                  Sair
-                </Button>
-              </>
+              <Button
+                onClick={() => setLocation('/minha-conta/pedidos')}
+                variant="ghost"
+                size="icon"
+                className="text-[var(--rosa-principal)]"
+              >
+                <User className="h-5 w-5" />
+              </Button>
             ) : (
-              <>
-                <Button
-                  onClick={() => setLocation('/login')}
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full text-[var(--rosa-principal)] hover:bg-[var(--rosa-principal)]/5 transition-colors font-medium"
-                >
-                  Entrar
-                </Button>
-                <Button
-                  onClick={() => setLocation('/cadastro')}
-                  size="sm"
-                  className="rounded-full bg-[var(--rosa-principal)] text-white shadow-sm hover:shadow-md hover:-translate-y-px transition-all"
-                >
-                  Cadastrar
-                </Button>
-              </>
+              <Button
+                onClick={() => setLocation('/login')}
+                variant="ghost"
+                size="sm"
+                className="text-[var(--rosa-principal)] font-medium"
+              >
+                Entrar
+              </Button>
             )}
           </div>
         </div>

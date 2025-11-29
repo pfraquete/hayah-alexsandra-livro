@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
   const [isCalculating, setIsCalculating] = useState(false);
   const [shippingOptions, setShippingOptions] = useState<any[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
 
   const [address, setAddress] = useState({
     recipientName: '',
@@ -36,8 +37,36 @@ export default function Checkout() {
   const calculateShipping = trpc.checkout.calculateShipping.useMutation();
   const createOrderMutation = trpc.checkout.createOrder.useMutation();
 
-  const product = products?.[0];
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('checkoutData');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        if (parsed.productId) setSelectedProductId(parsed.productId);
+        if (parsed.quantity) setQuantity(parsed.quantity);
+        if (parsed.cep) {
+          setAddress(prev => ({ ...prev, cep: parsed.cep }));
+        }
+        // If we have shipping info, we could try to restore it, but it's safer to recalculate
+        // or just let the user confirm the address first.
+      } catch (e) {
+        console.error('Error parsing checkout data', e);
+      }
+    }
+  }, []);
+
+  const product = products?.find(p => p.id === selectedProductId) || products?.[0];
   const selectedShipping = shippingOptions.find(opt => opt.code === shippingMethod);
+
+  // Auto-calculate shipping if we have product and CEP from localStorage
+  useEffect(() => {
+    if (product && address.cep && address.cep.replace(/\D/g, '').length === 8 && shippingOptions.length === 0 && !isCalculating) {
+      // Optional: Auto-calculate. For now let's just let the user click or wait for them to confirm address.
+      // Actually, let's trigger it if we have the CEP to make it smoother.
+      handleCalculateShipping();
+    }
+  }, [product, address.cep]);
 
   if (!isAuthenticated) {
     return (
@@ -152,7 +181,11 @@ export default function Checkout() {
                 </div>
 
                 <div className="flex gap-6">
-                  <div className="w-24 h-32 bg-gradient-to-br from-primary to-purple-500 rounded-lg shadow-md flex-shrink-0" />
+                  <img
+                    src={product.imageUrl || '/assets/images/book-cover-official.jpg'}
+                    alt={product.name}
+                    className="w-24 h-32 object-cover rounded-lg shadow-md flex-shrink-0"
+                  />
                   <div className="flex-1 space-y-2">
                     <h3 className="font-bold text-lg">{product.name}</h3>
                     <p className="text-primary font-semibold text-xl">

@@ -169,9 +169,11 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0 animate-fade-in">
-                  <span className="font-bold tracking-tight truncate text-lg text-gradient">
-                    Hayah Livros
-                  </span>
+                  <img
+                    src="/assets/images/hayah-logo.png"
+                    alt="Hayah Livros"
+                    className="h-8 object-contain"
+                  />
                 </div>
               ) : null}
             </div>
@@ -188,8 +190,8 @@ function DashboardLayoutContent({
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
                       className={`h-10 transition-all font-medium rounded-xl ${isActive
-                          ? "bg-primary/10 text-primary shadow-sm"
-                          : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                        ? "bg-primary/10 text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                         }`}
                     >
                       <item.icon

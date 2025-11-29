@@ -200,59 +200,59 @@ export default function Admin() {
 
           {/* Dashboard Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card className="glass-card border-l-4 border-l-green-500">
+            <Card className="glass-card border-l-4 border-l-[var(--rosa-principal)]">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground font-medium">Receita Total</p>
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-2xl font-bold text-[var(--rosa-principal)]">
                       R$ {(totalRevenue / 100).toFixed(2)}
                     </p>
                   </div>
-                  <div className="p-3 bg-green-100/50 rounded-full">
-                    <DollarSign className="h-6 w-6 text-green-600" />
+                  <div className="p-3 bg-pink-100/50 rounded-full">
+                    <DollarSign className="h-6 w-6 text-[var(--rosa-principal)]" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="glass-card border-l-4 border-l-blue-500">
+            <Card className="glass-card border-l-4 border-l-blue-400">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground font-medium">Pedidos Pagos</p>
                     <p className="text-2xl font-bold text-blue-600">{paidOrders}</p>
                   </div>
-                  <div className="p-3 bg-blue-100/50 rounded-full">
-                    <TrendingUp className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 bg-blue-50 rounded-full">
+                    <TrendingUp className="h-6 w-6 text-blue-500" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="glass-card border-l-4 border-l-orange-500">
+            <Card className="glass-card border-l-4 border-l-orange-400">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground font-medium">Aguardando Pagamento</p>
                     <p className="text-2xl font-bold text-orange-600">{pendingOrders}</p>
                   </div>
-                  <div className="p-3 bg-orange-100/50 rounded-full">
-                    <Package className="h-6 w-6 text-orange-600" />
+                  <div className="p-3 bg-orange-50 rounded-full">
+                    <Package className="h-6 w-6 text-orange-500" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="glass-card border-l-4 border-l-purple-500">
+            <Card className="glass-card border-l-4 border-l-slate-400">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground font-medium">Estoque Total</p>
-                    <p className="text-2xl font-bold text-purple-600">{totalStock} un.</p>
+                    <p className="text-2xl font-bold text-slate-700">{totalStock} un.</p>
                   </div>
-                  <div className="p-3 bg-purple-100/50 rounded-full">
-                    <ShoppingBag className="h-6 w-6 text-purple-600" />
+                  <div className="p-3 bg-slate-100/50 rounded-full">
+                    <ShoppingBag className="h-6 w-6 text-slate-600" />
                   </div>
                 </div>
               </CardContent>

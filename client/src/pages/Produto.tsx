@@ -22,11 +22,11 @@ import { toast } from 'sonner';
 // Dados do produto hardcoded
 const PRODUCT = {
   id: 1,
-  name: 'Mulher Sábia Vida Próspera',
-  description: 'Um ano inteiro aprendendo com provérbios a viver com equilíbrio, abundância e graça.',
+  name: 'Mulher Sábia, Vida Próspera',
+  description: 'Um ano inteiro aprendendo com Provérbios a viver com equilíbrio, abundância e graça.',
   priceCents: 7990,
   compareAtPriceCents: 9990,
-  imageUrl: 'https://cncayyuiazbwuqsamgqe.supabase.co/storage/v1/object/public/products/mulher-sabia-vida-prospera.jpeg',
+  imageUrl: '/assets/images/book-cover-official.jpg',
   stockQuantity: 100,
   weightGrams: 300,
   widthCm: 14,
@@ -50,7 +50,7 @@ export default function Produto() {
     // Formatar CEP: 00000-000
     const numbers = value.replace(/\D/g, '');
     if (numbers.length <= 8) {
-      const formatted = numbers.length > 5 
+      const formatted = numbers.length > 5
         ? `${numbers.slice(0, 5)}-${numbers.slice(5)}`
         : numbers;
       setCep(formatted);
@@ -89,6 +89,7 @@ export default function Produto() {
       productId: PRODUCT.id,
       quantity,
       shipping: selectedShipping,
+      cep,
     }));
 
     setLocation('/checkout');
@@ -97,14 +98,14 @@ export default function Produto() {
   const subtotal = (PRODUCT.priceCents * quantity) / 100;
   const shippingCost = selectedShipping ? parseFloat(selectedShipping.price) : 0;
   const total = subtotal + shippingCost;
-  const discount = PRODUCT.compareAtPriceCents 
+  const discount = PRODUCT.compareAtPriceCents
     ? ((PRODUCT.compareAtPriceCents - PRODUCT.priceCents) / PRODUCT.compareAtPriceCents * 100).toFixed(0)
     : 0;
 
   return (
     <div className="min-h-screen relative overflow-hidden py-8">
       <div className="absolute inset-0 mesh-gradient opacity-20 -z-10" />
-      
+
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Botão Voltar */}
@@ -224,11 +225,10 @@ export default function Produto() {
                       {shippingOptions.options.map((option: any) => (
                         <div
                           key={option.id}
-                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                            selectedShipping?.id === option.id
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:border-primary/50'
-                          }`}
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedShipping?.id === option.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                            }`}
                           onClick={() => setSelectedShipping(option)}
                         >
                           <div className="flex items-center justify-between">

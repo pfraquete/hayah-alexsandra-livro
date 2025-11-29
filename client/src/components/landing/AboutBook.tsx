@@ -1,62 +1,81 @@
-import { Check } from 'lucide-react';
+import { Check, Star, Heart, BookOpen } from 'lucide-react';
 
 export function AboutBook() {
+  const pillars = [
+    {
+      icon: Heart,
+      title: "Vida Equilibrada",
+      description: "Aprenda a harmonizar todas as áreas da sua vida com sabedoria divina."
+    },
+    {
+      icon: BookOpen,
+      title: "Caminho de Sabedoria",
+      description: "Princípios práticos de Provérbios aplicados ao dia a dia da mulher moderna."
+    },
+    {
+      icon: Star,
+      title: "Abundância com Propósito",
+      description: "Descubra como prosperar financeiramente mantendo seus valores cristãos."
+    },
+    {
+      icon: Check,
+      title: "Crescimento Espiritual",
+      description: "Devocionais diários para fortalecer sua fé e intimidade com Deus."
+    }
+  ];
+
   return (
-    <section className="py-16 lg:py-24">
+    <section id="sobre-livro" className="py-20 bg-white overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-12 items-start">
-          {/* Left Column */}
-          <div>
-            <div className="mb-8 max-w-2xl">
-              <h2 className="font-serif text-3xl lg:text-[2.3rem] mb-4 text-[var(--texto-escuro)]">
-                Um livro que cura, confronta e acolhe ao mesmo tempo.
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* Image Side */}
+          <div className="relative order-2 lg:order-1">
+            <div className="relative mx-auto max-w-[400px] aspect-[3/4] perspective-1000 group">
+              <div className="absolute inset-0 bg-[var(--rosa-principal)]/20 blur-3xl rounded-full -z-10 transform group-hover:scale-110 transition-transform duration-700" />
+
+              {/* 3D Book Effect */}
+              <div className="relative w-full h-full transform transition-transform duration-500 group-hover:rotate-y-6 preserve-3d shadow-2xl rounded-r-xl">
+                <div className="absolute top-0 left-0 w-12 h-full bg-[#d66294] origin-left rotate-y-90 rounded-l-sm transform -translate-x-12" />
+                <img
+                  src="/assets/images/book-cover-official.jpg"
+                  alt="Capa do Livro Mulher Sábia, Vida Próspera"
+                  className="w-full h-full object-cover rounded-r-xl shadow-lg"
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-black/10 via-transparent to-white/20 pointer-events-none rounded-r-xl" />
+              </div>
+            </div>
+          </div>
+
+          {/* Content Side */}
+          <div className="order-1 lg:order-2 space-y-8">
+            <div className="space-y-4">
+              <h2 className="text-4xl lg:text-5xl font-serif font-bold text-[var(--preto-suave)]">
+                Uma jornada de <span className="text-[var(--rosa-principal)]">transformação</span>
               </h2>
-              <p className="text-[var(--texto-suave)] text-lg leading-relaxed">
-                Este não é apenas mais um livro de inspiração feminina. Alexsandra abre o coração e compartilha
-                processos reais de dor, cura e recomeços, guiando você em uma jornada íntima com Deus e consigo mesma.
+              <p className="text-lg text-[var(--texto-suave)] leading-relaxed">
+                "Mulher Sábia, Vida Próspera" não é apenas um livro, é um convite para reescrever sua história.
+                Através de uma leitura envolvente e prática, Alexsandra Sardinha guia você por um caminho de autodescoberta,
+                fé e realização pessoal.
               </p>
             </div>
 
-            <ul className="space-y-3 mb-8">
-              {[
-                "Textos curtos e profundos, ideais para ler no dia a dia.",
-                "Reflexões práticas para aplicar imediatamente na sua rotina.",
-                "Histórias reais que fazem você se sentir vista, ouvida e abraçada.",
-                "Espaços para anotar seus próprios processos e orações."
-              ].map((item, i) => (
-                <li key={i} className="flex items-start gap-3 relative pl-6 text-[0.95rem] text-[var(--texto-escuro)]">
-                  <Check className="absolute left-0 top-1 h-4 w-4 text-[var(--rosa-principal)]" />
-                  {item}
-                </li>
+            <div className="grid sm:grid-cols-2 gap-6">
+              {pillars.map((pilar, index) => (
+                <div key={index} className="bg-[var(--rosa-pastel)]/50 p-6 rounded-2xl hover:bg-[var(--rosa-pastel)] transition-colors duration-300">
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm text-[var(--rosa-principal)]">
+                    <pilar.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-serif font-bold text-lg text-[var(--rosa-profundo)] mb-2">{pilar.title}</h3>
+                  <p className="text-sm text-[var(--texto-suave)]">{pilar.description}</p>
+                </div>
               ))}
-            </ul>
+            </div>
 
-            <ul className="flex flex-wrap gap-2">
-              {[
-                "Identidade",
-                "Autoestima",
-                "Recomeços",
-                "Fé prática",
-                "Mulher adulta & real"
-              ].map((tag, i) => (
-                <li key={i} className="px-3 py-1.5 rounded-full bg-[rgba(232,115,165,0.06)] text-[0.82rem] text-[var(--texto-suave)]">
-                  {tag}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Right Column */}
-          <div className="bg-[var(--branco-rosado)] rounded-[16px] p-8">
-            <h3 className="font-serif text-xl mb-4 text-[var(--texto-escuro)]">Por que este livro é diferente?</h3>
-            <p className="text-[var(--texto-suave)] mb-4 leading-relaxed">
-              Ele foi escrito por uma mulher comum, que viveu dores reais e descobriu que Deus não chama mulheres
-              perfeitas, mas mulheres dispostas. Ao longo das páginas, você vai se enxergar, chorar, sorrir e
-              se reencontrar com a sua própria história.
-            </p>
-            <p className="text-[var(--texto-escuro)] font-medium leading-relaxed">
-              É como sentar para conversar com uma amiga que já passou pela tempestade e hoje te ajuda a atravessar a sua.
-            </p>
+            <div className="bg-[var(--rosa-principal)]/5 border-l-4 border-[var(--rosa-principal)] p-6 rounded-r-xl">
+              <p className="italic text-[var(--texto-suave)] font-medium">
+                "A sabedoria é a chave que destranca as portas da prosperidade em todas as áreas da sua vida."
+              </p>
+            </div>
           </div>
         </div>
       </div>
