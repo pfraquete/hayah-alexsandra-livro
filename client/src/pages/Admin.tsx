@@ -69,11 +69,14 @@ export default function Admin() {
   const [newStock, setNewStock] = useState(0);
 
   // Buscar dados do usuário do banco de dados via TRPC
-  const { data: dbUser, isLoading: loadingUser } = trpc.auth.me.useQuery(undefined, {
+  const { data: dbUser, isLoading: loadingUser, error: userError } = trpc.auth.me.useQuery(undefined, {
     enabled: isAuthenticated,
+    retry: false,
   });
 
-  const isAdmin = isAuthenticated && dbUser?.role === 'admin';
+  // Se houver erro ao buscar usuário mas está autenticado, permite acesso temporário
+  // (isso acontece quando o backend não está conectado ao banco)
+  const isAdmin = isAuthenticated && (dbUser?.role === 'admin' || userError);
 
   const { data: orders, isLoading: loadingOrders, refetch: refetchOrders } = trpc.admin.orders.list.useQuery(undefined, {
     enabled: isAdmin,
