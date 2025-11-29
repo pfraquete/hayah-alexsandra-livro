@@ -6,7 +6,7 @@ export function Offer() {
     const [, setLocation] = useLocation();
 
     return (
-        <section id="comprar" className="py-16 lg:py-24">
+        <section id="oferta" className="py-16 lg:py-24">
             <div className="container mx-auto px-4">
                 <div className="grid lg:grid-cols-[1fr_1fr] gap-12 items-center">
 
