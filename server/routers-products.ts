@@ -12,6 +12,14 @@ import {
   getOrderById,
   getOrderItems
 } from "./db-products";
+import {
+  createPixPayment,
+  createBoletoPayment,
+  createCreditCardPayment,
+  isPagarmeConfigured,
+  type PaymentResult
+} from "./services/pagarme";
+import { sendEmail, orderConfirmationEmail } from "./services/email";
 
 export const productsRouter = router({
   list: publicProcedure.query(async () => {
@@ -126,10 +134,71 @@ export const checkoutRouter = router({
         totalPriceCents: subtotalCents,
         productName: product.name,
       }]);
-      
+
+      // Processar pagamento baseado no método escolhido
+      let paymentResult: PaymentResult | null = null;
+      const customer = {
+        name: input.address.recipientName,
+        email: ctx.user.email || '',
+        document: ctx.user.cpf || '',
+      };
+      const billingAddress = {
+        street: input.address.street,
+        number: input.address.number,
+        complement: input.address.complement,
+        neighborhood: input.address.district,
+        city: input.address.city,
+        state: input.address.state,
+        zipCode: input.address.cep.replace(/\D/g, ''),
+        country: 'BR',
+      };
+
+      if (input.paymentMethod === 'pix') {
+        paymentResult = await createPixPayment({
+          amountCents: totalCents,
+          customer,
+          orderId: String(orderId),
+        });
+      } else if (input.paymentMethod === 'boleto') {
+        paymentResult = await createBoletoPayment({
+          amountCents: totalCents,
+          customer,
+          billingAddress,
+          orderId: String(orderId),
+        });
+      }
+      // Credit card requires card data which should be sent in a separate step
+
+      // Enviar e-mail de confirmação do pedido
+      if (ctx.user.email) {
+        const emailContent = orderConfirmationEmail({
+          customerName: input.address.recipientName,
+          orderId,
+          items: [{
+            name: product.name,
+            quantity: input.quantity,
+            priceCents: product.priceCents * input.quantity,
+          }],
+          subtotalCents,
+          shippingCents: input.shippingPriceCents,
+          totalCents,
+          shippingAddress: input.address,
+          paymentMethod: input.paymentMethod,
+        });
+
+        // Enviar e-mail de forma assíncrona (não bloqueia o fluxo)
+        sendEmail({
+          to: ctx.user.email,
+          ...emailContent,
+        }).catch(err => {
+          console.error('[Email] Failed to send order confirmation:', err);
+        });
+      }
+
       return {
         orderId,
         totalCents,
+        payment: paymentResult,
       };
     }),
 });
