@@ -1,77 +1,58 @@
-import { Award, BookOpen, Users } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 export function AboutAuthor() {
   return (
-    <section className="py-20 relative overflow-hidden">
-      <div className="absolute inset-0 mesh-gradient opacity-20 -z-10" />
+    <section className="py-16 lg:py-24">
       <div className="container mx-auto px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Foto da Autora */}
-            <div className="relative animate-scale-in">
-              <div className="aspect-square rounded-[2rem] shadow-soft-lg overflow-hidden border-4 border-white/30">
-                <img
-                  src="/assets/images/author-promo.jpg"
-                  alt="Alexsandra Sardinha"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
-                />
-              </div>
-              <div className="absolute -bottom-6 -right-6 glass-card rounded-2xl p-6 max-w-xs animate-fade-in-up delay-300">
-                <div className="flex items-center gap-3 mb-2">
-                  <Award className="h-6 w-6 text-primary" />
-                  <span className="font-semibold text-foreground">Autora Best-Seller</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Reconhecida internacionalmente por seu trabalho em desenvolvimento pessoal
-                </p>
-              </div>
+        <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 items-center">
+
+          {/* Left Column - Photo & Bio */}
+          <div className="text-center">
+            <div className="w-[190px] h-[190px] rounded-full bg-gradient-to-br from-[#fce3ee] to-[#f9d0e0] mx-auto mb-6 relative overflow-hidden shadow-[0_18px_45px_rgba(232,115,165,0.35)]">
+              <img
+                src="/assets/images/author-promo.jpg"
+                alt="Alexsandra Sardinha"
+                className="w-full h-full object-cover"
+              />
             </div>
-
-            {/* Conteúdo */}
-            <div className="space-y-6 animate-fade-in-up delay-100">
-              <div>
-                <h2 className="text-4xl font-bold mb-4 text-foreground">Sobre a Autora</h2>
-                <h3 className="text-2xl text-gradient font-bold mb-4">Alexsandra Sardinha</h3>
-              </div>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Alexsandra Sardinha é coach de vida, palestrante motivacional e autora best-seller
-                com mais de 15 anos de experiência ajudando mulheres a transformarem suas vidas.
-                Sua abordagem única combina sabedoria prática com estratégias comprovadas de
-                desenvolvimento pessoal e prosperidade financeira.
-              </p>
-
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Formada em Psicologia e com certificações internacionais em coaching, Alexsandra
-                já impactou a vida de milhares de mulheres através de seus livros, palestras e
-                programas de mentoria.
-              </p>
-
-              <div className="grid sm:grid-cols-3 gap-6 pt-6">
-                <div className="text-center">
-                  <div className="glass-card rounded-2xl p-6 hover:-translate-y-1 transition-all duration-300">
-                    <BookOpen className="h-8 w-8 text-primary mx-auto mb-3" />
-                    <div className="text-3xl font-bold text-foreground mb-1">5+</div>
-                    <div className="text-sm text-muted-foreground">Livros Publicados</div>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="glass-card rounded-2xl p-6 hover:-translate-y-1 transition-all duration-300">
-                    <Users className="h-8 w-8 text-primary mx-auto mb-3" />
-                    <div className="text-3xl font-bold text-foreground mb-1">50k+</div>
-                    <div className="text-sm text-muted-foreground">Vidas Impactadas</div>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="glass-card rounded-2xl p-6 hover:-translate-y-1 transition-all duration-300">
-                    <Award className="h-8 w-8 text-primary mx-auto mb-3" />
-                    <div className="text-3xl font-bold text-foreground mb-1">15+</div>
-                    <div className="text-sm text-muted-foreground">Anos de Experiência</div>
-                  </div>
-                </div>
-              </div>
+            <div className="text-xs uppercase tracking-[0.18em] text-[var(--rosa-principal)] mb-2 font-semibold">
+              Sobre a autora
             </div>
+            <h3 className="font-serif text-2xl mb-4 text-[var(--texto-escuro)]">Alexsandra Sardinha</h3>
+            <p className="text-[var(--texto-suave)] text-sm leading-relaxed max-w-sm mx-auto">
+              Mulher, mãe, esposa, líder e, acima de tudo, alguém que decidiu transformar suas dores em fonte de cura
+              para outras mulheres. Alexsandra atua há anos mentoreando, aconselhando e caminhando ao lado de mulheres
+              que desejam viver tudo o que Deus sonhou para elas.
+            </p>
           </div>
+
+          {/* Right Column - Content */}
+          <div>
+            <h2 className="font-serif text-3xl lg:text-[2.3rem] mb-6 text-[var(--texto-escuro)]">
+              Uma voz que entende as suas dores e celebra as suas vitórias.
+            </h2>
+            <p className="text-[var(--texto-suave)] text-lg mb-4 leading-relaxed">
+              Com uma linguagem simples, direta e cheia de sensibilidade, Alexsandra traz à tona temas como autoestima,
+              identidade, vulnerabilidade, perdão e escolhas difíceis — sempre à luz da fé.
+            </p>
+            <p className="text-[var(--texto-escuro)] font-medium mb-8 leading-relaxed">
+              Ao ler, você vai sentir como se estivesse em uma conversa íntima, sincera e sem máscaras.
+            </p>
+
+            <ul className="space-y-4">
+              {[
+                "Histórias reais, sem romantizar a dor.",
+                "Reflexões que te levam à ação e não só à emoção.",
+                "Um convite para caminhar alinhada ao propósito de Deus para você."
+              ].map((item, i) => (
+                <li key={i} className="flex items-start gap-3 relative pl-6 text-[0.95rem] text-[var(--texto-escuro)]">
+                  <Check className="absolute left-0 top-1 h-4 w-4 text-[var(--rosa-principal)]" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
         </div>
       </div>
     </section>
