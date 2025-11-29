@@ -19,11 +19,16 @@ export function CTA() {
           </p>
 
           <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-8 border border-white/20 shadow-2xl animate-scale-in delay-200">
-            <div className="text-5xl lg:text-6xl font-bold mb-2 drop-shadow-sm">
-              R$ 67,90
+            <div className="flex items-center justify-center gap-4 mb-2">
+              <div className="text-3xl lg:text-4xl font-semibold line-through text-white/60 drop-shadow-sm">
+                R$ 99,90
+              </div>
+              <div className="text-5xl lg:text-6xl font-bold text-white drop-shadow-sm">
+                R$ 79,90
+              </div>
             </div>
             <div className="text-xl text-white/90 mb-8">
-              ou 12x de R$ 6,53 no cartão
+              ou 12x de R$ 7,66 no cartão
             </div>
             <Button
               size="lg"
