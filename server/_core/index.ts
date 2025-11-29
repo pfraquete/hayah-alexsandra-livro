@@ -10,6 +10,13 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
+// Allowed origins for CORS
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:5173',
+].filter(Boolean) as string[];
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
@@ -35,16 +42,47 @@ async function startServer() {
 
   // Security Middleware
   app.use(helmet());
-  app.use(cors());
 
-  // Rate Limiting
-  const limiter = rateLimit({
+  // CORS configuration with specific origins
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.) in development
+      if (!origin && process.env.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }));
+
+  // General Rate Limiting
+  const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
     standardHeaders: true,
     legacyHeaders: false,
+    message: { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
   });
-  app.use("/api", limiter);
+
+  // Strict Rate Limiting for Authentication endpoints
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 auth attempts per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+    skipSuccessfulRequests: true, // Don't count successful logins
+  });
+
+  // Apply auth limiter to auth-related endpoints
+  app.use("/api/trpc/auth", authLimiter);
+  app.use("/api", generalLimiter);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
