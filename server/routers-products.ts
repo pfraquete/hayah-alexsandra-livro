@@ -10,8 +10,14 @@ import {
   getUserAddresses,
   getUserOrders,
   getOrderById,
-  getOrderItems
+  getOrderItems,
+  updateUserProfile,
+  getUserById,
+  updateAddress,
+  deleteAddress,
+  getOrderWithTracking,
 } from "./db-products";
+import { trackShipment } from "./services/tracking";
 import {
   createPixPayment,
   createBoletoPayment,
@@ -207,21 +213,115 @@ export const ordersRouter = router({
   myOrders: protectedProcedure.query(async ({ ctx }) => {
     return await getUserOrders(ctx.user.id);
   }),
-  
+
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input, ctx }) => {
       const order = await getOrderById(input.id);
-      
+
       if (!order || order.userId !== ctx.user.id) {
         throw new Error('Pedido não encontrado');
       }
-      
+
       const items = await getOrderItems(input.id);
-      
+
       return {
         ...order,
         items,
       };
+    }),
+
+  // Get order with tracking information
+  getWithTracking: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const orderData = await getOrderWithTracking(input.id, ctx.user.id);
+
+      if (!orderData) {
+        throw new Error('Pedido não encontrado');
+      }
+
+      // If there's a tracking code, fetch live tracking info
+      let trackingInfo = null;
+      if (orderData.shipment?.trackingCode) {
+        trackingInfo = await trackShipment(orderData.shipment.trackingCode);
+      }
+
+      return {
+        ...orderData,
+        tracking: trackingInfo,
+      };
+    }),
+});
+
+// User Profile Router
+export const profileRouter = router({
+  get: protectedProcedure.query(async ({ ctx }) => {
+    return await getUserById(ctx.user.id);
+  }),
+
+  update: protectedProcedure
+    .input(z.object({
+      name: z.string().min(2).optional(),
+      phone: z.string().optional(),
+      cpf: z.string().length(11).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await updateUserProfile(ctx.user.id, input);
+      return { success: true };
+    }),
+});
+
+// Address Router
+export const addressRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    return await getUserAddresses(ctx.user.id);
+  }),
+
+  create: protectedProcedure
+    .input(z.object({
+      recipientName: z.string(),
+      cep: z.string(),
+      street: z.string(),
+      number: z.string(),
+      complement: z.string().optional(),
+      district: z.string(),
+      city: z.string(),
+      state: z.string().length(2),
+      isDefault: z.boolean().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const addressId = await createAddress({
+        userId: ctx.user.id,
+        ...input,
+        isDefault: input.isDefault ?? false,
+      });
+      return { success: true, addressId };
+    }),
+
+  update: protectedProcedure
+    .input(z.object({
+      addressId: z.number(),
+      recipientName: z.string().optional(),
+      cep: z.string().optional(),
+      street: z.string().optional(),
+      number: z.string().optional(),
+      complement: z.string().optional(),
+      district: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().length(2).optional(),
+      isDefault: z.boolean().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { addressId, ...data } = input;
+      await updateAddress(addressId, ctx.user.id, data);
+      return { success: true };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ addressId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      await deleteAddress(input.addressId, ctx.user.id);
+      return { success: true };
     }),
 });

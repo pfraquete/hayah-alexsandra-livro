@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { orders, orderItems, users } from "../drizzle/schema";
+import { orders, orderItems, users, shipments, products, type InsertShipment } from "../drizzle/schema";
 
 export async function getAllOrders() {
   const db = await getDb();
@@ -58,4 +58,133 @@ export async function getOrderWithUser(orderId: number) {
     user: userResult.length > 0 ? userResult[0] : null,
     items,
   };
+}
+
+// ============================================================
+// Shipment Management
+// ============================================================
+
+export async function createShipment(data: InsertShipment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(shipments).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function getShipmentByOrderId(orderId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(shipments).where(eq(shipments.orderId, orderId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateShipmentTracking(
+  orderId: number,
+  trackingCode: string,
+  trackingUrl: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Check if shipment exists
+  const existing = await getShipmentByOrderId(orderId);
+
+  if (existing) {
+    await db
+      .update(shipments)
+      .set({
+        trackingCode,
+        trackingUrl,
+        status: "ETIQUETA_GERADA",
+      })
+      .where(eq(shipments.orderId, orderId));
+  } else {
+    // Get order to retrieve shipping info
+    const order = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    if (order.length === 0) throw new Error("Order not found");
+
+    await db.insert(shipments).values({
+      orderId,
+      shippingMethod: "PAC",
+      shippingPriceCents: order[0].shippingPriceCents,
+      trackingCode,
+      trackingUrl,
+      status: "ETIQUETA_GERADA",
+    });
+  }
+}
+
+export async function updateShipmentStatus(
+  orderId: number,
+  status: "PENDENTE" | "ETIQUETA_GERADA" | "POSTADO" | "EM_TRANSITO" | "SAIU_PARA_ENTREGA" | "ENTREGUE" | "DEVOLVIDO"
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const updateData: Record<string, unknown> = { status };
+
+  if (status === "POSTADO") {
+    updateData.postedAt = new Date();
+  } else if (status === "ENTREGUE") {
+    updateData.deliveredAt = new Date();
+  }
+
+  await db.update(shipments).set(updateData).where(eq(shipments.orderId, orderId));
+}
+
+// ============================================================
+// Product/Stock Management
+// ============================================================
+
+export async function getAllProducts() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(products);
+}
+
+export async function updateProductStock(productId: number, quantity: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(products).set({ stockQuantity: quantity }).where(eq(products.id, productId));
+}
+
+export async function updateProduct(
+  productId: number,
+  data: {
+    name?: string;
+    description?: string;
+    priceCents?: number;
+    compareAtPriceCents?: number | null;
+    stockQuantity?: number;
+    active?: boolean;
+    imageUrl?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(products).set(data).where(eq(products.id, productId));
+}
+
+export async function createProduct(data: {
+  name: string;
+  slug: string;
+  description?: string;
+  priceCents: number;
+  compareAtPriceCents?: number;
+  stockQuantity?: number;
+  imageUrl?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(products).values({
+    ...data,
+    active: true,
+  });
+  return Number(result[0].insertId);
 }

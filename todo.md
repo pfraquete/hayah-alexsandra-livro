@@ -19,22 +19,22 @@
 - [x] Carrinho de compras
 - [x] Formulário de endereço
 - [x] Cálculo de frete (simulado)
-- [ ] Integração Pagar.me (pendente)
+- [x] Integração Pagar.me (PIX, Boleto, Cartão - modo simulação disponível)
 - [x] Confirmação de pedido
-- [ ] E-mail de confirmação
+- [x] E-mail de confirmação (templates HTML responsivos)
 
 ## Fase 4 - Área do Cliente
 - [x] Dashboard do cliente
 - [x] Lista de pedidos
 - [x] Detalhes do pedido
-- [ ] Rastreamento de envio
-- [ ] Editar dados pessoais
+- [x] Rastreamento de envio (integração com Correios/transportadoras)
+- [x] Editar dados pessoais (perfil e endereços)
 
 ## Fase 5 - Painel Administrativo
 - [x] Dashboard financeiro
 - [x] Gestão de pedidos
 - [x] Gestão de usuários
-- [ ] Gestão de estoque
+- [x] Gestão de estoque (CRUD de produtos)
 - [ ] Geração de etiquetas
 - [ ] Integração WhatsApp (2chat)
 - [ ] Conversas WhatsApp
@@ -46,7 +46,7 @@
 - [ ] Sugestões de upsell
 
 ## Fase 7 - Testes e Deploy
-- [ ] Testes de integração
+- [x] Testes de integração (25 testes passando)
 - [ ] Testes E2E
 - [ ] Otimização de performance
 - [ ] Checkpoint final
