@@ -54,6 +54,36 @@ export const checkoutRouter = router({
         throw new Error('Produto não encontrado');
       }
 
+      // Fallback shipping options when Melhor Envio is not configured
+      const getFallbackShippingOptions = () => {
+        // Calculate base price based on quantity
+        const basePrice = 15.90 + (input.quantity - 1) * 3.00;
+        const expressPrice = 25.90 + (input.quantity - 1) * 5.00;
+
+        return {
+          options: [
+            {
+              id: 'pac',
+              code: 'pac',
+              name: 'PAC - Correios',
+              price: basePrice.toFixed(2),
+              priceCents: Math.round(basePrice * 100),
+              delivery_time: 12,
+              deliveryDays: 12,
+            },
+            {
+              id: 'sedex',
+              code: 'sedex',
+              name: 'SEDEX - Correios',
+              price: expressPrice.toFixed(2),
+              priceCents: Math.round(expressPrice * 100),
+              delivery_time: 5,
+              deliveryDays: 5,
+            },
+          ],
+        };
+      };
+
       try {
         const shippingOptions = await calculateMelhorEnvioShipping({
           to_postal_code: input.cep,
@@ -68,18 +98,28 @@ export const checkoutRouter = router({
           }],
         });
 
+        // If no options returned (API not configured), use fallback
+        if (!shippingOptions || shippingOptions.length === 0) {
+          console.log("[Shipping] Using fallback shipping options");
+          return getFallbackShippingOptions();
+        }
+
         return {
           options: shippingOptions.map(opt => ({
+            id: String(opt.id),
+            code: String(opt.id),
             name: opt.company.name + ' - ' + opt.name,
+            price: opt.custom_price,
             priceCents: Math.round(parseFloat(opt.custom_price) * 100),
+            delivery_time: opt.custom_delivery_time,
             deliveryDays: opt.custom_delivery_time,
-            code: String(opt.id), // Using service ID as code
           })),
         };
       } catch (error) {
         console.error("Erro ao calcular frete:", error);
-        // Fallback or rethrow
-        throw new Error("Erro ao calcular frete. Verifique o CEP e tente novamente.");
+        // Return fallback options instead of throwing
+        console.log("[Shipping] API error, using fallback shipping options");
+        return getFallbackShippingOptions();
       }
     }),
 
