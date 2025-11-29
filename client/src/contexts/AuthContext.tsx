@@ -13,6 +13,7 @@ interface AuthContextType {
   signOut: () => Promise<any>;
   resetPassword: (email: string) => Promise<any>;
   updatePassword: (newPassword: string) => Promise<any>;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -17,16 +18,54 @@ import Produto from "./pages/Produto";
 function Router() {
   return (
     <Switch>
+      {/* Public routes */}
       <Route path={"/"} component={Home} />
-      <Route path={"/login"} component={Login} />
-      <Route path={"/cadastro"} component={Cadastro} />
-      <Route path={"/recuperar-senha"} component={RecuperarSenha} />
       <Route path={"/produto"} component={Produto} />
-      <Route path={"/checkout"} component={Checkout} />
-      <Route path={"/minha-conta/pedidos"} component={MinhaContaPedidos} />
-      <Route path={"/minha-conta/pedidos/:id"} component={DetalhesPedido} />
-      <Route path={"/admin"} component={Admin} />
       <Route path={"/404"} component={NotFound} />
+
+      {/* Auth routes - redirect to home if already logged in */}
+      <Route path={"/login"}>
+        <ProtectedRoute redirectIfAuthenticated>
+          <Login />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/cadastro"}>
+        <ProtectedRoute redirectIfAuthenticated>
+          <Cadastro />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/recuperar-senha"}>
+        <ProtectedRoute redirectIfAuthenticated>
+          <RecuperarSenha />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Protected routes - require authentication */}
+      <Route path={"/checkout"}>
+        <ProtectedRoute>
+          <Checkout />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/minha-conta/pedidos"}>
+        <ProtectedRoute>
+          <MinhaContaPedidos />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/minha-conta/pedidos/:id"}>
+        {(params) => (
+          <ProtectedRoute>
+            <DetalhesPedido />
+          </ProtectedRoute>
+        )}
+      </Route>
+
+      {/* Admin route - has its own internal role check */}
+      <Route path={"/admin"}>
+        <ProtectedRoute>
+          <Admin />
+        </ProtectedRoute>
+      </Route>
+
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>

@@ -31,57 +31,80 @@ export function useSupabaseAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Clear error state
+  const clearError = () => setError(null);
+
   const signUp = async (email: string, password: string, metadata?: { name?: string; phone?: string; cpf?: string }) => {
+    setError(null); // Clear previous errors
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: metadata,
-      },
-    });
-    setLoading(false);
-    if (error) setError(error);
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+        },
+      });
+      if (error) setError(error);
+      return { data, error };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signIn = async (email: string, password: string) => {
+    setError(null); // Clear previous errors
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
-    if (error) setError(error);
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) setError(error);
+      return { data, error };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signOut = async () => {
+    setError(null); // Clear previous errors
     setLoading(true);
-    const { error } = await supabase.auth.signOut();
-    setLoading(false);
-    if (error) setError(error);
-    return { error };
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) setError(error);
+      return { error };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetPassword = async (email: string) => {
+    setError(null); // Clear previous errors
     setLoading(true);
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (error) setError(error);
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/recuperar-senha`,
+      });
+      if (error) setError(error);
+      return { data, error };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updatePassword = async (newPassword: string) => {
+    setError(null); // Clear previous errors
     setLoading(true);
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-    setLoading(false);
-    if (error) setError(error);
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) setError(error);
+      return { data, error };
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {
@@ -95,5 +118,6 @@ export function useSupabaseAuth() {
     signOut,
     resetPassword,
     updatePassword,
+    clearError,
   };
 }
