@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
-import { 
-  getActiveProducts, 
-  getProductBySlug, 
-  createOrder, 
+import {
+  getActiveProducts,
+  getProductBySlug,
+  getProductById,
+  createOrder,
   createOrderItems,
   createAddress,
   getUserAddresses,
@@ -75,10 +76,15 @@ export const checkoutRouter = router({
       customerNotes: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Buscar produto
-      const product = await getProductBySlug('mulher-sabia-vida-prospera');
+      // Buscar produto pelo ID informado
+      const product = await getProductById(input.productId);
       if (!product) {
         throw new Error('Produto não encontrado');
+      }
+
+      // Verificar se o produto está ativo
+      if (!product.active) {
+        throw new Error('Produto não disponível para venda');
       }
       
       // Calcular valores
