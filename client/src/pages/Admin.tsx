@@ -61,14 +61,19 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
 
 export default function Admin() {
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [trackingModal, setTrackingModal] = useState<{ open: boolean; orderId: number | null }>({ open: false, orderId: null });
   const [trackingCode, setTrackingCode] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
   const [stockModal, setStockModal] = useState<{ open: boolean; productId: number | null; currentStock: number }>({ open: false, productId: null, currentStock: 0 });
   const [newStock, setNewStock] = useState(0);
 
-  const isAdmin = isAuthenticated && user?.user_metadata?.role === 'admin';
+  // Buscar dados do usuário do banco de dados via TRPC
+  const { data: dbUser, isLoading: loadingUser } = trpc.auth.me.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+
+  const isAdmin = isAuthenticated && dbUser?.role === 'admin';
 
   const { data: orders, isLoading: loadingOrders, refetch: refetchOrders } = trpc.admin.orders.list.useQuery(undefined, {
     enabled: isAdmin,
@@ -120,7 +125,7 @@ export default function Admin() {
     },
   });
 
-  if (authLoading) {
+  if (authLoading || loadingUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
