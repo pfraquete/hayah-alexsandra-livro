@@ -68,8 +68,8 @@ export async function createShipment(data: InsertShipment) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(shipments).values(data);
-  return Number(result[0].insertId);
+  const result = await db.insert(shipments).values(data).returning({ id: shipments.id });
+  return result[0].id;
 }
 
 export async function getShipmentByOrderId(orderId: number) {
@@ -185,6 +185,6 @@ export async function createProduct(data: {
   const result = await db.insert(products).values({
     ...data,
     active: true,
-  });
-  return Number(result[0].insertId);
+  }).returning({ id: products.id });
+  return result[0].id;
 }

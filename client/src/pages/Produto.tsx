@@ -41,20 +41,10 @@ export default function Produto() {
   const [selectedShipping, setSelectedShipping] = useState<any>(null);
 
   // Calcular frete
-  const {
-    data: shippingOptions,
-    isLoading: loadingShipping,
-    refetch: calculateShipping,
-  } = trpc.checkout.calculateShipping.useQuery(
-    {
-      productId: PRODUCT.id,
-      quantity,
-      cep: cep.replace(/\D/g, ''),
-    },
-    {
-      enabled: false, // Só calcula quando o usuário clicar
-    }
-  );
+  const calculateShippingMutation = trpc.checkout.calculateShipping.useMutation();
+
+  const shippingOptions = calculateShippingMutation.data;
+  const loadingShipping = calculateShippingMutation.isPending;
 
   const handleCepChange = (value: string) => {
     // Formatar CEP: 00000-000
@@ -73,7 +63,11 @@ export default function Produto() {
       toast.error('Por favor, insira um CEP válido');
       return;
     }
-    calculateShipping();
+    calculateShippingMutation.mutate({
+      productId: PRODUCT.id,
+      quantity,
+      cep: cleanCep,
+    });
   };
 
   const handleQuantityChange = (delta: number) => {
