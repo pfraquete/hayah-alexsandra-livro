@@ -2,6 +2,37 @@ import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, j
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 
+export const orderStatusEnum = pgEnum("order_status", [
+  "AGUARDANDO_PAGAMENTO",
+  "PAGO",
+  "EM_SEPARACAO",
+  "POSTADO",
+  "EM_TRANSITO",
+  "ENTREGUE",
+  "CANCELADO",
+  "REEMBOLSADO",
+]);
+
+export const shipmentStatusEnum = pgEnum("shipment_status", [
+  "PENDENTE",
+  "ETIQUETA_GERADA",
+  "POSTADO",
+  "EM_TRANSITO",
+  "SAIU_PARA_ENTREGA",
+  "ENTREGUE",
+  "DEVOLVIDO",
+]);
+
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "pending",
+  "processing",
+  "authorized",
+  "paid",
+  "refunded",
+  "failed",
+  "canceled",
+]);
+
 /**
  * Core user table backing auth flow.
  * Extend this file with additional tables as your product grows.
@@ -13,7 +44,7 @@ export const users = pgTable("users", {
    * Use this for relations between tables.
    */
   id: serial("id").primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+  /** Supabase Auth user ID. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -90,16 +121,7 @@ export const orders = pgTable("orders", {
   shippingPriceCents: integer("shippingPriceCents").notNull(),
   discountCents: integer("discountCents").default(0).notNull(),
   totalCents: integer("totalCents").notNull(),
-  status: mysqlEnum("status", [
-    "AGUARDANDO_PAGAMENTO",
-    "PAGO",
-    "EM_SEPARACAO",
-    "POSTADO",
-    "EM_TRANSITO",
-    "ENTREGUE",
-    "CANCELADO",
-    "REEMBOLSADO",
-  ]).default("AGUARDANDO_PAGAMENTO").notNull(),
+  status: orderStatusEnum("status").default("AGUARDANDO_PAGAMENTO").notNull(),
   paymentMethod: varchar("paymentMethod", { length: 50 }),
   shippingAddress: json("shippingAddress"),
   customerNotes: text("customerNotes"),
@@ -111,8 +133,8 @@ export const orders = pgTable("orders", {
   deliveredAt: timestamp("deliveredAt"),
   cancelledAt: timestamp("cancelledAt"),
 }, (table) => ({
-  userIdIdx: index("user_id_idx").on(table.userId),
-  statusIdx: index("status_idx").on(table.status),
+  userIdIdx: index("orders_user_id_idx").on(table.userId),
+  statusIdx: index("orders_status_idx").on(table.status),
 }));
 
 export type Order = typeof orders.$inferSelect;
@@ -145,15 +167,7 @@ export const shipments = pgTable("shipments", {
   shippingPriceCents: integer("shippingPriceCents").notNull(),
   trackingCode: varchar("trackingCode", { length: 50 }),
   trackingUrl: varchar("trackingUrl", { length: 500 }),
-  status: mysqlEnum("status", [
-    "PENDENTE",
-    "ETIQUETA_GERADA",
-    "POSTADO",
-    "EM_TRANSITO",
-    "SAIU_PARA_ENTREGA",
-    "ENTREGUE",
-    "DEVOLVIDO",
-  ]).default("PENDENTE").notNull(),
+  status: shipmentStatusEnum("status").default("PENDENTE").notNull(),
   labelUrl: varchar("labelUrl", { length: 500 }),
   estimatedDeliveryDays: integer("estimatedDeliveryDays"),
   postedAt: timestamp("postedAt"),
@@ -175,15 +189,7 @@ export const paymentTransactions = pgTable("paymentTransactions", {
   gateway: varchar("gateway", { length: 50 }).default("pagarme").notNull(),
   method: varchar("method", { length: 50 }).notNull(),
   amountCents: integer("amountCents").notNull(),
-  status: mysqlEnum("status", [
-    "pending",
-    "processing",
-    "authorized",
-    "paid",
-    "refunded",
-    "failed",
-    "canceled",
-  ]).default("pending").notNull(),
+  status: paymentStatusEnum("status").default("pending").notNull(),
   gatewayResponse: json("gatewayResponse"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
