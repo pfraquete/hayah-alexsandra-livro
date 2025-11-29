@@ -1,0 +1,235 @@
+# Variáveis de Ambiente para o Vercel - Hayah Alexsandra Livro
+
+## 📋 Resumo
+
+Este documento lista todas as variáveis de ambiente necessárias para configurar o projeto **hayah-alexsandra-livro** no Vercel.
+
+---
+
+## 🔧 Variáveis Obrigatórias
+
+### 1. Banco de Dados
+- **`DATABASE_URL`**
+  - **Descrição**: URL de conexão com o banco de dados MySQL
+  - **Formato**: `mysql://user:password@host:port/database`
+  - **Exemplo**: `mysql://admin:senha123@db.example.com:3306/hayah_livros`
+  - **Ambiente**: Production, Preview, Development
+
+---
+
+## 🔐 Variáveis de Autenticação e Segurança
+
+### 2. JWT Secret
+- **`JWT_SECRET`**
+  - **Descrição**: Chave secreta para assinatura de tokens JWT
+  - **Formato**: String aleatória segura
+  - **Exemplo**: `sua-chave-secreta-muito-segura-aqui`
+  - **Ambiente**: Production, Preview, Development
+
+### 3. OAuth Configuration
+- **`OAUTH_SERVER_URL`**
+  - **Descrição**: URL do servidor OAuth para autenticação
+  - **Formato**: URL completa
+  - **Exemplo**: `https://oauth.example.com`
+  - **Ambiente**: Production, Preview, Development
+
+- **`OWNER_OPEN_ID`**
+  - **Descrição**: ID do proprietário/administrador do sistema
+  - **Formato**: String identificadora única
+  - **Ambiente**: Production, Preview, Development
+
+### 4. Vite App ID
+- **`VITE_APP_ID`**
+  - **Descrição**: Identificador da aplicação Vite
+  - **Formato**: String identificadora
+  - **Ambiente**: Production, Preview, Development
+
+---
+
+## 💳 Gateway de Pagamento (Pagar.me)
+
+### 5. Pagar.me API Key
+- **`PAGARME_API_KEY`**
+  - **Descrição**: Chave de API do Pagar.me para processar pagamentos
+  - **Formato**: String da chave de API
+  - **Exemplo**: `sk_test_xxxxxxxxxxxxx` (teste) ou `sk_live_xxxxxxxxxxxxx` (produção)
+  - **Ambiente**: Production, Preview, Development
+  - **Obtenção**: Dashboard do Pagar.me → Configurações → API Keys
+
+### 6. Pagar.me API URL
+- **`PAGARME_API_URL`**
+  - **Descrição**: URL base da API do Pagar.me
+  - **Formato**: URL completa
+  - **Valor Padrão**: `https://api.pagar.me/core/v5`
+  - **Ambiente**: Production, Preview, Development
+
+---
+
+## 📧 Serviço de Email
+
+### 7. Resend API Key (Opção 1)
+- **`RESEND_API_KEY`**
+  - **Descrição**: Chave de API do Resend para envio de emails
+  - **Formato**: String da chave de API
+  - **Exemplo**: `re_xxxxxxxxxxxxx`
+  - **Ambiente**: Production, Preview, Development
+  - **Obtenção**: Dashboard do Resend → API Keys
+  - **Nota**: Use Resend OU SendGrid, não ambos
+
+### 8. SendGrid API Key (Opção 2)
+- **`SENDGRID_API_KEY`**
+  - **Descrição**: Chave de API do SendGrid para envio de emails (alternativa ao Resend)
+  - **Formato**: String da chave de API
+  - **Exemplo**: `SG.xxxxxxxxxxxxx`
+  - **Ambiente**: Production, Preview, Development
+  - **Obtenção**: Dashboard do SendGrid → Settings → API Keys
+  - **Nota**: Use SendGrid OU Resend, não ambos
+
+### 9. Email From
+- **`EMAIL_FROM`**
+  - **Descrição**: Endereço de email remetente
+  - **Formato**: Email válido
+  - **Valor Padrão**: `noreply@hayahlivros.com.br`
+  - **Ambiente**: Production, Preview, Development
+
+### 10. Email From Name
+- **`EMAIL_FROM_NAME`**
+  - **Descrição**: Nome do remetente exibido nos emails
+  - **Formato**: String
+  - **Valor Padrão**: `Hayah Livros`
+  - **Ambiente**: Production, Preview, Development
+
+---
+
+## 📦 Melhor Envio (Frete)
+
+### 11. Melhor Envio Token
+- **`MELHOR_ENVIO_TOKEN`**
+  - **Descrição**: Token de autenticação da API do Melhor Envio
+  - **Formato**: Bearer token
+  - **Exemplo**: `eyJ0eXAiOiJKV1QiLCJhbGc...`
+  - **Ambiente**: Production, Preview, Development
+  - **Obtenção**: Dashboard do Melhor Envio → Configurações → API
+
+### 12. Melhor Envio URL
+- **`MELHOR_ENVIO_URL`**
+  - **Descrição**: URL base da API do Melhor Envio
+  - **Formato**: URL completa
+  - **Valor Padrão**: `https://sandbox.melhorenvio.com.br` (sandbox)
+  - **Produção**: `https://melhorenvio.com.br`
+  - **Ambiente**: Production, Preview, Development
+
+### 13. Melhor Envio From CEP
+- **`MELHOR_ENVIO_FROM_CEP`**
+  - **Descrição**: CEP de origem para cálculo de frete
+  - **Formato**: 8 dígitos sem formatação
+  - **Exemplo**: `01310100`
+  - **Ambiente**: Production, Preview, Development
+
+### 14. Melhor Envio Email
+- **`MELHOR_ENVIO_EMAIL`**
+  - **Descrição**: Email cadastrado no Melhor Envio (usado no User-Agent)
+  - **Formato**: Email válido
+  - **Exemplo**: `contact@hayahlivros.com.br`
+  - **Ambiente**: Production, Preview, Development
+
+---
+
+## 🏗️ Forge API (Opcional)
+
+### 15. Built-in Forge API URL
+- **`BUILT_IN_FORGE_API_URL`**
+  - **Descrição**: URL da API Forge interna
+  - **Formato**: URL completa
+  - **Ambiente**: Production, Preview, Development
+  - **Nota**: Opcional, usado para funcionalidades específicas
+
+### 16. Built-in Forge API Key
+- **`BUILT_IN_FORGE_API_KEY`**
+  - **Descrição**: Chave de API do Forge
+  - **Formato**: String da chave de API
+  - **Ambiente**: Production, Preview, Development
+  - **Nota**: Opcional, usado para funcionalidades específicas
+
+---
+
+## 🌍 Ambiente
+
+### 17. Node Environment
+- **`NODE_ENV`**
+  - **Descrição**: Ambiente de execução do Node.js
+  - **Formato**: String
+  - **Valores**: `production`, `development`, `test`
+  - **Ambiente**: Production → `production`, Preview → `development`, Development → `development`
+  - **Nota**: Geralmente configurado automaticamente pelo Vercel
+
+---
+
+## 📝 Instruções de Configuração no Vercel
+
+### Passo a Passo:
+
+1. **Acesse o Dashboard do Vercel**
+   - Vá para [vercel.com](https://vercel.com)
+   - Selecione o projeto **hayah-alexsandra-livro**
+
+2. **Navegue até Environment Variables**
+   - Clique em **Settings**
+   - Selecione **Environment Variables** no menu lateral
+
+3. **Adicione cada variável**
+   - Clique em **Add New**
+   - Insira o **Name** (nome da variável)
+   - Insira o **Value** (valor da variável)
+   - Selecione os ambientes: **Production**, **Preview**, **Development**
+   - Clique em **Save**
+
+4. **Redeploy após configurar**
+   - Após adicionar todas as variáveis, faça um novo deploy
+   - Vá para **Deployments**
+   - Clique nos três pontos do último deployment
+   - Selecione **Redeploy**
+
+---
+
+## ✅ Checklist de Configuração
+
+- [ ] `DATABASE_URL` - **OBRIGATÓRIO**
+- [ ] `JWT_SECRET` - **OBRIGATÓRIO**
+- [ ] `OAUTH_SERVER_URL` - **OBRIGATÓRIO**
+- [ ] `OWNER_OPEN_ID` - **OBRIGATÓRIO**
+- [ ] `VITE_APP_ID` - **OBRIGATÓRIO**
+- [ ] `PAGARME_API_KEY` - **OBRIGATÓRIO**
+- [ ] `PAGARME_API_URL` - Recomendado
+- [ ] `RESEND_API_KEY` ou `SENDGRID_API_KEY` - **OBRIGATÓRIO** (escolha um)
+- [ ] `EMAIL_FROM` - Recomendado
+- [ ] `EMAIL_FROM_NAME` - Recomendado
+- [ ] `MELHOR_ENVIO_TOKEN` - **OBRIGATÓRIO**
+- [ ] `MELHOR_ENVIO_URL` - Recomendado
+- [ ] `MELHOR_ENVIO_FROM_CEP` - **OBRIGATÓRIO**
+- [ ] `MELHOR_ENVIO_EMAIL` - Recomendado
+- [ ] `BUILT_IN_FORGE_API_URL` - Opcional
+- [ ] `BUILT_IN_FORGE_API_KEY` - Opcional
+
+---
+
+## 🔍 Observações Importantes
+
+1. **Segurança**: Nunca compartilhe suas chaves de API publicamente ou em repositórios Git
+2. **Ambientes**: Configure valores diferentes para Production e Preview quando necessário (ex: sandbox vs produção)
+3. **Teste**: Após configurar, teste todas as funcionalidades (pagamento, email, frete)
+4. **Backup**: Mantenha um backup seguro de todas as suas chaves de API
+
+---
+
+## 🆘 Suporte
+
+Se tiver dúvidas sobre como obter alguma dessas chaves:
+- **Pagar.me**: https://docs.pagar.me
+- **Resend**: https://resend.com/docs
+- **SendGrid**: https://docs.sendgrid.com
+- **Melhor Envio**: https://docs.melhorenvio.com.br
+
+---
+
+**Última atualização**: 28 de novembro de 2024
