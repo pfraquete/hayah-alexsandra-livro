@@ -27,7 +27,12 @@ export default function Produto() {
   const [selectedShipping, setSelectedShipping] = useState<any>(null);
 
   // Buscar o produto (assumindo que é o único produto por enquanto)
-  const { data: products, isLoading: loadingProducts } = trpc.products.list.useQuery();
+  const { data: products, isLoading: loadingProducts, error: productsError } = trpc.products.list.useQuery();
+  
+  console.log('Products data:', products);
+  console.log('Products loading:', loadingProducts);
+  console.log('Products error:', productsError);
+  
   const product = products?.[0];
 
   // Calcular frete
@@ -98,12 +103,31 @@ export default function Produto() {
     );
   }
 
-  if (!product) {
+  if (productsError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardHeader>
+            <CardTitle>Erro ao carregar produto</CardTitle>
+            <CardDescription>{productsError.message}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setLocation('/')}>Voltar para Home</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!loadingProducts && !product) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card>
           <CardHeader>
             <CardTitle>Produto não encontrado</CardTitle>
+            <CardDescription>
+              Nenhum produto disponível no momento. Total de produtos: {products?.length || 0}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => setLocation('/')}>Voltar para Home</Button>
