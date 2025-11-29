@@ -4,7 +4,6 @@ import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -20,20 +19,26 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Dados do produto hardcoded
+const PRODUCT = {
+  id: 1,
+  name: 'Mulher Sábia Vida Próspera',
+  description: 'Um ano inteiro aprendendo com provérbios a viver com equilíbrio, abundância e graça.',
+  priceCents: 7990,
+  compareAtPriceCents: 9990,
+  imageUrl: 'https://cncayyuiazbwuqsamgqe.supabase.co/storage/v1/object/public/products/mulher-sabia-vida-prospera.jpeg',
+  stockQuantity: 100,
+  weightGrams: 300,
+  widthCm: 14,
+  heightCm: 21,
+  lengthCm: 2,
+};
+
 export default function Produto() {
   const [, setLocation] = useLocation();
   const [quantity, setQuantity] = useState(1);
   const [cep, setCep] = useState('');
   const [selectedShipping, setSelectedShipping] = useState<any>(null);
-
-  // Buscar o produto (assumindo que é o único produto por enquanto)
-  const { data: products, isLoading: loadingProducts, error: productsError } = trpc.products.list.useQuery();
-  
-  console.log('Products data:', products);
-  console.log('Products loading:', loadingProducts);
-  console.log('Products error:', productsError);
-  
-  const product = products?.[0];
 
   // Calcular frete
   const {
@@ -42,7 +47,7 @@ export default function Produto() {
     refetch: calculateShipping,
   } = trpc.checkout.calculateShipping.useQuery(
     {
-      productId: product?.id || 0,
+      productId: PRODUCT.id,
       quantity,
       cep: cep.replace(/\D/g, ''),
     },
@@ -73,7 +78,7 @@ export default function Produto() {
 
   const handleQuantityChange = (delta: number) => {
     const newQuantity = quantity + delta;
-    if (newQuantity >= 1 && newQuantity <= (product?.stockQuantity || 1)) {
+    if (newQuantity >= 1 && newQuantity <= PRODUCT.stockQuantity) {
       setQuantity(newQuantity);
       setSelectedShipping(null); // Reset shipping quando mudar quantidade
     }
@@ -87,7 +92,7 @@ export default function Produto() {
 
     // Salvar no localStorage para usar no checkout
     localStorage.setItem('checkoutData', JSON.stringify({
-      productId: product?.id,
+      productId: PRODUCT.id,
       quantity,
       shipping: selectedShipping,
     }));
@@ -95,53 +100,11 @@ export default function Produto() {
     setLocation('/checkout');
   };
 
-  if (loadingProducts) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (productsError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card>
-          <CardHeader>
-            <CardTitle>Erro ao carregar produto</CardTitle>
-            <CardDescription>{productsError.message}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => setLocation('/')}>Voltar para Home</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!loadingProducts && !product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card>
-          <CardHeader>
-            <CardTitle>Produto não encontrado</CardTitle>
-            <CardDescription>
-              Nenhum produto disponível no momento. Total de produtos: {products?.length || 0}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => setLocation('/')}>Voltar para Home</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const subtotal = (product.priceCents * quantity) / 100;
+  const subtotal = (PRODUCT.priceCents * quantity) / 100;
   const shippingCost = selectedShipping ? parseFloat(selectedShipping.price) : 0;
   const total = subtotal + shippingCost;
-  const discount = product.compareAtPriceCents 
-    ? ((product.compareAtPriceCents - product.priceCents) / product.compareAtPriceCents * 100).toFixed(0)
+  const discount = PRODUCT.compareAtPriceCents 
+    ? ((PRODUCT.compareAtPriceCents - PRODUCT.priceCents) / PRODUCT.compareAtPriceCents * 100).toFixed(0)
     : 0;
 
   return (
@@ -164,8 +127,8 @@ export default function Produto() {
               <Card className="glass-card overflow-hidden">
                 <CardContent className="p-0">
                   <img
-                    src={product.imageUrl || '/assets/images/book-cover.jpg'}
-                    alt={product.name}
+                    src={PRODUCT.imageUrl}
+                    alt={PRODUCT.name}
                     className="w-full h-auto object-cover"
                   />
                 </CardContent>
@@ -175,31 +138,27 @@ export default function Produto() {
             {/* Coluna de Informações */}
             <div className="space-y-6">
               <div>
-                <h1 className="text-4xl font-bold mb-2">{product.name}</h1>
-                {product.description && (
-                  <p className="text-muted-foreground text-lg">{product.description}</p>
-                )}
+                <h1 className="text-4xl font-bold mb-2">{PRODUCT.name}</h1>
+                <p className="text-muted-foreground text-lg">{PRODUCT.description}</p>
               </div>
 
               {/* Preço */}
               <Card className="glass-card">
                 <CardContent className="p-6">
                   <div className="space-y-2">
-                    {product.compareAtPriceCents && (
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl text-muted-foreground line-through">
-                          R$ {(product.compareAtPriceCents / 100).toFixed(2)}
-                        </span>
-                        <Badge variant="destructive" className="text-sm">
-                          -{discount}%
-                        </Badge>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl text-muted-foreground line-through">
+                        R$ {(PRODUCT.compareAtPriceCents / 100).toFixed(2)}
+                      </span>
+                      <Badge variant="destructive" className="text-sm">
+                        -{discount}%
+                      </Badge>
+                    </div>
                     <div className="text-5xl font-bold text-primary">
-                      R$ {(product.priceCents / 100).toFixed(2)}
+                      R$ {(PRODUCT.priceCents / 100).toFixed(2)}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      ou 12x de R$ {((product.priceCents / 100) / 12).toFixed(2)} no cartão
+                      ou 12x de R$ {((PRODUCT.priceCents / 100) / 12).toFixed(2)} no cartão
                     </p>
                   </div>
                 </CardContent>
@@ -225,12 +184,12 @@ export default function Produto() {
                       variant="outline"
                       size="icon"
                       onClick={() => handleQuantityChange(1)}
-                      disabled={quantity >= product.stockQuantity}
+                      disabled={quantity >= PRODUCT.stockQuantity}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                      ({product.stockQuantity} disponíveis)
+                      ({PRODUCT.stockQuantity} disponíveis)
                     </span>
                   </div>
                 </CardContent>
@@ -347,7 +306,7 @@ export default function Produto() {
                   <CardContent className="p-4 text-center">
                     <Package className="h-6 w-6 mx-auto mb-2 text-primary" />
                     <div className="text-xs text-muted-foreground">Peso</div>
-                    <div className="font-semibold">{product.weightGrams}g</div>
+                    <div className="font-semibold">{PRODUCT.weightGrams}g</div>
                   </CardContent>
                 </Card>
                 <Card className="glass-card">
