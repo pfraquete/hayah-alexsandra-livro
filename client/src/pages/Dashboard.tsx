@@ -35,14 +35,6 @@ export default function Dashboard() {
             color: "text-pink-500",
             bgColor: "bg-pink-50",
         },
-        {
-            title: "Tornar Criadora",
-            description: "Comece a vender seus próprios conteúdos.",
-            icon: Star,
-            action: () => setLocation("/comunidade/tornar-criadora"),
-            color: "text-amber-500",
-            bgColor: "bg-amber-50",
-        },
     ];
 
     return (
