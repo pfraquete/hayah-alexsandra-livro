@@ -1,11 +1,20 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { trpc } from '@/lib/trpc';
+import { Link } from "wouter";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -42,11 +51,22 @@ import {
   TrendingUp,
   Eye,
   Send,
+  Search,
+  Filter,
   Plus,
   Minus,
-  ExternalLink
+  ExternalLink,
+  BookOpen,
+  FileText,
+  MessageSquare,
+  MoreHorizontal,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProductDialog } from '@/components/admin/ProductDialog';
+import { CourseDialog } from '@/components/admin/CourseDialog';
+import { DigitalProductDialog } from '@/components/admin/DigitalProductDialog';
+import { CommunityModeration } from '@/components/admin/CommunityModeration';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   AGUARDANDO_PAGAMENTO: { label: 'Aguardando Pagamento', variant: 'outline' },
@@ -67,6 +87,9 @@ export default function Admin() {
   const [selectedOrder, setSelectedOrder] = useState<number | null>(null);
   const [stockModal, setStockModal] = useState<{ open: boolean; productId: number | null; currentStock: number }>({ open: false, productId: null, currentStock: 0 });
   const [newStock, setNewStock] = useState(0);
+  const [productModal, setProductModal] = useState<{ open: boolean; product?: any }>({ open: false, product: undefined });
+  const [courseModal, setCourseModal] = useState<{ open: boolean; course?: any }>({ open: false, course: undefined });
+  const [digitalProductModal, setDigitalProductModal] = useState<{ open: boolean; product?: any }>({ open: false, product: undefined });
 
   // Buscar dados do usuário do banco de dados via TRPC
   const { data: dbUser, isLoading: loadingUser } = trpc.auth.me.useQuery(undefined, {
@@ -81,8 +104,72 @@ export default function Admin() {
     enabled: isAdmin,
   });
 
-  const { data: users, isLoading: loadingUsers } = trpc.admin.users.list.useQuery(undefined, {
+  const { data: users, isLoading: loadingUsers, refetch: refetchUsers } = trpc.admin.users.list.useQuery(undefined, {
     enabled: isAdmin,
+  });
+
+  const updateUserMutation = trpc.admin.users.update.useMutation({
+    onSuccess: () => {
+      toast.success("Usuário atualizado com sucesso");
+      refetchUsers();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const handleUpdateUser = (userId: number, data: { role?: "user" | "admin"; active?: boolean }) => {
+    if (confirm("Tem certeza que deseja atualizar este usuário?")) {
+      updateUserMutation.mutate({ userId, ...data });
+    }
+  };
+
+  const deleteProductMutation = trpc.admin.products.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Produto excluído com sucesso");
+      refetchProducts();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const deleteCourseMutation = trpc.marketplace.courses.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Curso excluído com sucesso");
+      refetchCourses();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const deleteDigitalProductMutation = trpc.marketplace.digitalProducts.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Produto digital excluído com sucesso");
+      refetchDigitalProducts();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const handleDeleteProduct = (productId: number) => {
+    if (confirm("Tem certeza que deseja excluir este produto?")) {
+      deleteProductMutation.mutate({ productId });
+    }
+  };
+
+  const handleDeleteCourse = (courseId: number) => {
+    if (confirm("Tem certeza que deseja excluir este curso?")) {
+      deleteCourseMutation.mutate({ courseId });
+    }
+  };
+
+  const handleDeleteDigitalProduct = (productId: number) => {
+    if (confirm("Tem certeza que deseja excluir este produto digital?")) {
+      deleteDigitalProductMutation.mutate({ productId });
+    }
+  };
+
+  const { data: courses, isLoading: loadingCourses, refetch: refetchCourses } = trpc.marketplace.courses.myCourses.useQuery(undefined, {
+    enabled: !!dbUser && dbUser.role === 'admin',
+  });
+
+  const { data: digitalProducts, isLoading: loadingDigitalProducts, refetch: refetchDigitalProducts } = trpc.marketplace.digitalProducts.myProducts.useQuery(undefined, {
+    enabled: !!dbUser && dbUser.role === 'admin',
   });
 
   const { data: products, isLoading: loadingProducts, refetch: refetchProducts } = trpc.admin.products.list.useQuery(undefined, {
@@ -261,17 +348,29 @@ export default function Admin() {
 
           <Tabs defaultValue="orders" className="space-y-6">
             <TabsList>
-              <TabsTrigger value="orders">
-                <Package className="mr-2 h-4 w-4" />
+              <TabsTrigger value="orders" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
                 Pedidos
               </TabsTrigger>
-              <TabsTrigger value="products">
-                <ShoppingBag className="mr-2 h-4 w-4" />
+              <TabsTrigger value="products" className="flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4" />
                 Produtos
               </TabsTrigger>
-              <TabsTrigger value="users">
-                <Users className="mr-2 h-4 w-4" />
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
                 Usuários
+              </TabsTrigger>
+              <TabsTrigger value="courses" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Cursos
+              </TabsTrigger>
+              <TabsTrigger value="digital-products" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Produtos Digitais
+              </TabsTrigger>
+              <TabsTrigger value="community" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Comunidade
               </TabsTrigger>
             </TabsList>
 
@@ -392,11 +491,17 @@ export default function Admin() {
             {/* Products Tab */}
             <TabsContent value="products">
               <Card className="glass-card">
-                <CardHeader>
-                  <CardTitle>Gerenciar Produtos</CardTitle>
-                  <CardDescription>
-                    Controle o estoque e informações dos produtos
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Gerenciar Produtos</CardTitle>
+                    <CardDescription>
+                      Controle o estoque e informações dos produtos
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setProductModal({ open: true, product: undefined })}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Produto
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {loadingProducts ? (
@@ -421,9 +526,18 @@ export default function Admin() {
                             <TableRow key={product.id}>
                               <TableCell className="font-medium">#{product.id}</TableCell>
                               <TableCell>
-                                <div>
-                                  <div className="font-medium">{product.name}</div>
-                                  <div className="text-sm text-muted-foreground">{product.slug}</div>
+                                <div className="flex items-center gap-3">
+                                  {product.imageUrl && (
+                                    <img
+                                      src={product.imageUrl}
+                                      alt={product.name}
+                                      className="w-10 h-10 rounded object-cover"
+                                    />
+                                  )}
+                                  <div>
+                                    <div className="font-medium">{product.name}</div>
+                                    <div className="text-sm text-muted-foreground">{product.slug}</div>
+                                  </div>
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -451,6 +565,13 @@ export default function Admin() {
                                   <Button
                                     size="sm"
                                     variant="outline"
+                                    onClick={() => setProductModal({ open: true, product })}
+                                  >
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => {
                                       setStockModal({
                                         open: true,
@@ -461,6 +582,14 @@ export default function Admin() {
                                     }}
                                   >
                                     Estoque
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleDeleteProduct(product.id)}
+                                    disabled={deleteProductMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </TableCell>
@@ -473,6 +602,13 @@ export default function Admin() {
                     <div className="text-center py-12">
                       <ShoppingBag className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600">Nenhum produto encontrado</p>
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => setProductModal({ open: true, product: undefined })}
+                      >
+                        Criar Primeiro Produto
+                      </Button>
                     </div>
                   )}
                 </CardContent>
@@ -504,7 +640,9 @@ export default function Admin() {
                             <TableHead>Telefone</TableHead>
                             <TableHead>CPF</TableHead>
                             <TableHead>Função</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead>Cadastro</TableHead>
+                            <TableHead>Ações</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -521,7 +659,37 @@ export default function Admin() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
+                                <Badge variant={u.active ? 'outline' : 'destructive'}>
+                                  {u.active ? 'Ativo' : 'Inativo'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
                                 {new Date(u.createdAt).toLocaleDateString('pt-BR')}
+                              </TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                      <span className="sr-only">Abrir menu</span>
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                    <DropdownMenuItem
+                                      onClick={() => handleUpdateUser(u.id, { role: u.role === 'admin' ? 'user' : 'admin' })}
+                                    >
+                                      Tornar {u.role === 'admin' ? 'Usuário' : 'Admin'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className={u.active ? "text-destructive" : "text-green-600"}
+                                      onClick={() => handleUpdateUser(u.id, { active: !u.active })}
+                                    >
+                                      {u.active ? 'Desativar Usuário' : 'Ativar Usuário'}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -536,6 +704,235 @@ export default function Admin() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Courses Tab */}
+            <TabsContent value="courses">
+              <Card className="glass-card">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Gerenciar Cursos</CardTitle>
+                    <CardDescription>
+                      Crie e gerencie seus cursos e conteúdos
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setCourseModal({ open: true, course: undefined })}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Curso
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {loadingCourses ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : courses && courses.length > 0 ? (
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Título</TableHead>
+                            <TableHead>Preço</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {courses.map((course) => (
+                            <TableRow key={course.id}>
+                              <TableCell className="font-medium">#{course.id}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  {course.thumbnailUrl && (
+                                    <img
+                                      src={course.thumbnailUrl}
+                                      alt={course.title}
+                                      className="w-10 h-10 rounded object-cover"
+                                    />
+                                  )}
+                                  <div>
+                                    <div className="font-medium">{course.title}</div>
+                                    <div className="text-sm text-muted-foreground">{course.slug}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-semibold">
+                                  R$ {(course.priceCents / 100).toFixed(2)}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={course.status === 'published' ? 'default' : 'secondary'}>
+                                  {course.status === 'published' ? 'Publicado' : course.status === 'draft' ? 'Rascunho' : 'Arquivado'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setCourseModal({ open: true, course })}
+                                  >
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    asChild
+                                  >
+                                    <Link to={`/admin/courses/${course.id}`}>
+                                      Gerenciar Conteúdo
+                                    </Link>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleDeleteCourse(course.id)}
+                                    disabled={deleteCourseMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600">Nenhum curso encontrado</p>
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => setCourseModal({ open: true, course: undefined })}
+                      >
+                        Criar Primeiro Curso
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Digital Products Tab */}
+            <TabsContent value="digital-products">
+              <Card className="glass-card">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Gerenciar Produtos Digitais</CardTitle>
+                    <CardDescription>
+                      eBooks, arquivos e outros conteúdos digitais
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setDigitalProductModal({ open: true, product: undefined })}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Produto Digital
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {loadingDigitalProducts ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : digitalProducts && digitalProducts.length > 0 ? (
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Título</TableHead>
+                            <TableHead>Preço</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {digitalProducts.map((product) => (
+                            <TableRow key={product.id}>
+                              <TableCell className="font-medium">#{product.id}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  {product.thumbnailUrl && (
+                                    <img
+                                      src={product.thumbnailUrl}
+                                      alt={product.title}
+                                      className="w-10 h-10 rounded object-cover"
+                                    />
+                                  )}
+                                  <div>
+                                    <div className="font-medium">{product.title}</div>
+                                    <div className="text-sm text-muted-foreground">{product.slug}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-semibold">
+                                  R$ {(product.priceCents / 100).toFixed(2)}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={product.status === 'published' ? 'default' : 'secondary'}>
+                                  {product.status === 'published' ? 'Publicado' : product.status === 'draft' ? 'Rascunho' : 'Arquivado'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setDigitalProductModal({ open: true, product })}
+                                  >
+                                    Editar
+                                  </Button>
+                                  {product.fileUrl && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      asChild
+                                    >
+                                      <a href={product.fileUrl} target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink className="h-4 w-4" />
+                                      </a>
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleDeleteDigitalProduct(product.id)}
+                                    disabled={deleteDigitalProductMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600">Nenhum produto digital encontrado</p>
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => setDigitalProductModal({ open: true, product: undefined })}
+                      >
+                        Criar Primeiro Produto Digital
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Community Tab */}
+            <TabsContent value="community">
+              <CommunityModeration />
             </TabsContent>
           </Tabs>
         </div>
@@ -725,6 +1122,27 @@ export default function Admin() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+
+      <ProductDialog
+        open={productModal.open}
+        onOpenChange={(open) => setProductModal(prev => ({ ...prev, open }))}
+        product={productModal.product}
+        onSuccess={() => refetchProducts()}
+      />
+
+      <CourseDialog
+        open={courseModal.open}
+        onOpenChange={(open) => setCourseModal(prev => ({ ...prev, open }))}
+        course={courseModal.course}
+        onSuccess={() => refetchCourses()}
+      />
+
+      <DigitalProductDialog
+        open={digitalProductModal.open}
+        onOpenChange={(open) => setDigitalProductModal(prev => ({ ...prev, open }))}
+        product={digitalProductModal.product}
+        onSuccess={() => refetchDigitalProducts()}
+      />
+    </div >
   );
 }

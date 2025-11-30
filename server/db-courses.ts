@@ -688,6 +688,17 @@ export async function updateDigitalProduct(productId: number, data: Partial<Inse
     .where(eq(digitalProducts.id, productId));
 }
 
+export async function deleteDigitalProduct(productId: number, creatorId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Delete purchases
+  await db.delete(digitalPurchases).where(eq(digitalPurchases.productId, productId));
+
+  // Delete product
+  await db.delete(digitalProducts).where(eq(digitalProducts.id, productId));
+}
+
 export async function getDigitalProductBySlug(slug: string) {
   const db = await getDb();
   if (!db) return null;

@@ -38,6 +38,7 @@ import {
   getUserDigitalPurchases,
   hasUserPurchasedProduct,
   incrementDownloadCount,
+  deleteDigitalProduct,
 } from "./db-courses";
 
 // Helper to generate slug from title
@@ -620,6 +621,18 @@ export const digitalProductsRouter = router({
     .mutation(async ({ input }) => {
       const { productId, ...data } = input;
       await updateDigitalProduct(productId, data);
+      return { success: true };
+    }),
+
+  // Delete digital product
+  delete: protectedProcedure
+    .input(z.object({ productId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const profile = await getCreatorProfileByUserId(ctx.user.id);
+      if (!profile) {
+        throw new Error("Perfil não encontrado");
+      }
+      await deleteDigitalProduct(input.productId, profile.id);
       return { success: true };
     }),
 

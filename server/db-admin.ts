@@ -1,20 +1,20 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { getDb } from "./db";
-import { orders, orderItems, users, shipments, products, type InsertShipment } from "../drizzle/schema";
+import { orders, orderItems, users, shipments, products, posts, postComments, creatorProfiles, type InsertShipment } from "../drizzle/schema";
 
 export async function getAllOrders() {
   const db = await getDb();
   if (!db) return [];
-  
+
   return await db.select().from(orders);
 }
 
 export async function updateOrderStatus(orderId: number, status: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const updateData: any = { status };
-  
+
   if (status === 'PAGO' && !updateData.paidAt) {
     updateData.paidAt = new Date();
   } else if (status === 'POSTADO' && !updateData.shippedAt) {
@@ -24,35 +24,42 @@ export async function updateOrderStatus(orderId: number, status: string) {
   } else if (status === 'CANCELADO' && !updateData.cancelledAt) {
     updateData.cancelledAt = new Date();
   }
-  
+
   await db.update(orders).set(updateData).where(eq(orders.id, orderId));
 }
 
 export async function updateOrderAdminNotes(orderId: number, adminNotes: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   await db.update(orders).set({ adminNotes }).where(eq(orders.id, orderId));
 }
 
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) return [];
-  
-  return await db.select().from(users);
+
+  return await db.select().from(users).orderBy(desc(users.createdAt));
+}
+
+export async function updateUser(userId: number, data: { role?: "user" | "admin"; active?: boolean }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users).set(data).where(eq(users.id, userId));
 }
 
 export async function getOrderWithUser(orderId: number) {
   const db = await getDb();
   if (!db) return null;
-  
+
   const orderResult = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (orderResult.length === 0) return null;
-  
+
   const order = orderResult[0];
   const userResult = await db.select().from(users).where(eq(users.id, order.userId)).limit(1);
   const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
-  
+
   return {
     ...order,
     user: userResult.length > 0 ? userResult[0] : null,
@@ -187,4 +194,64 @@ export async function createProduct(data: {
     active: true,
   }).returning({ id: products.id });
   return result[0].id;
+}
+
+export async function deleteProduct(productId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(products).where(eq(products.id, productId));
+}
+
+// ============================================================
+// Social Moderation
+// ============================================================
+
+export async function getAllPosts() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: posts.id,
+      content: posts.content,
+      createdAt: posts.createdAt,
+      creatorName: creatorProfiles.displayName,
+      creatorId: creatorProfiles.id,
+    })
+    .from(posts)
+    .leftJoin(creatorProfiles, eq(posts.creatorId, creatorProfiles.id))
+    .orderBy(desc(posts.createdAt));
+}
+
+export async function adminDeletePost(postId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(posts).where(eq(posts.id, postId));
+}
+
+export async function getAllComments() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: postComments.id,
+      content: postComments.content,
+      createdAt: postComments.createdAt,
+      postId: postComments.postId,
+      userName: users.name,
+      userId: users.id,
+    })
+    .from(postComments)
+    .leftJoin(users, eq(postComments.userId, users.id))
+    .orderBy(desc(postComments.createdAt));
+}
+
+export async function adminDeleteComment(commentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(postComments).where(eq(postComments.id, commentId));
 }

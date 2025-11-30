@@ -52,6 +52,25 @@ export default function Home() {
             <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">Início</a>
             <a href="#sobre-autora" className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">Sobre a Autora</a>
             <a href="#sobre-livro" className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">O Livro</a>
+
+            {isAuthenticated ? (
+              <Button
+                onClick={() => setLocation('/dashboard')}
+                variant="ghost"
+                className="text-[var(--rosa-principal)] font-medium hover:bg-[var(--rosa-pastel)]"
+              >
+                Ir para o App
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setLocation('/login')}
+                variant="ghost"
+                className="text-[var(--rosa-principal)] font-medium hover:bg-[var(--rosa-pastel)]"
+              >
+                Entrar
+              </Button>
+            )}
+
             <Button
               onClick={() => document.getElementById('oferta')?.scrollIntoView({ behavior: 'smooth' })}
               className="bg-[var(--rosa-principal)] hover:bg-[var(--rosa-profundo)] text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all"

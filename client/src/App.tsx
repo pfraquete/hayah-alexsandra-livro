@@ -13,6 +13,7 @@ import Checkout from "./pages/Checkout";
 import MinhaContaPedidos from "./pages/MinhaContaPedidos";
 import DetalhesPedido from "./pages/DetalhesPedido";
 import Admin from "./pages/Admin";
+import CourseManager from "./pages/admin/CourseManager";
 import Produto from "./pages/Produto";
 import Dashboard from "./pages/Dashboard";
 import DashboardLayout from "./components/DashboardLayout";
@@ -92,6 +93,11 @@ function Router() {
       <Route path={"/admin"}>
         <ProtectedRoute>
           <Admin />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/admin/courses/:courseId"}>
+        <ProtectedRoute>
+          <CourseManager />
         </ProtectedRoute>
       </Route>
 

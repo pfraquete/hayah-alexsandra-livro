@@ -14,6 +14,12 @@ import {
   updateProductStock,
   updateProduct,
   createProduct,
+  deleteProduct,
+  getAllPosts,
+  adminDeletePost,
+  getAllComments,
+  adminDeleteComment,
+  updateUser,
 } from "./db-admin";
 import { trackShipment, getTrackingUrl } from "./services/tracking";
 import { sendEmail, orderStatusUpdateEmail } from "./services/email";
@@ -21,9 +27,9 @@ import { sendEmail, orderStatusUpdateEmail } from "./services/email";
 // Middleware para verificar se o usuário é admin
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
-    throw new TRPCError({ 
+    throw new TRPCError({
       code: 'FORBIDDEN',
-      message: 'Acesso negado. Apenas administradores podem acessar esta funcionalidade.' 
+      message: 'Acesso negado. Apenas administradores podem acessar esta funcionalidade.'
     });
   }
   return next({ ctx });
@@ -34,13 +40,13 @@ export const adminRouter = router({
     list: adminProcedure.query(async () => {
       return await getAllOrders();
     }),
-    
+
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return await getOrderWithUser(input.id);
       }),
-    
+
     updateStatus: adminProcedure
       .input(z.object({
         orderId: z.number(),
@@ -59,7 +65,7 @@ export const adminRouter = router({
         await updateOrderStatus(input.orderId, input.status);
         return { success: true };
       }),
-    
+
     updateNotes: adminProcedure
       .input(z.object({
         orderId: z.number(),
@@ -70,11 +76,23 @@ export const adminRouter = router({
         return { success: true };
       }),
   }),
-  
+
   users: router({
     list: adminProcedure.query(async () => {
       return await getAllUsers();
     }),
+
+    update: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        role: z.enum(["user", "admin"]).optional(),
+        active: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { userId, ...data } = input;
+        await updateUser(userId, data);
+        return { success: true };
+      }),
   }),
 
   // Shipment/Tracking Management
@@ -196,6 +214,35 @@ export const adminRouter = router({
       .mutation(async ({ input }) => {
         const productId = await createProduct(input);
         return { success: true, productId };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ productId: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteProduct(input.productId);
+        return { success: true };
+      }),
+  }),
+
+  // Social Moderation
+  social: router({
+    listPosts: adminProcedure.query(async () => {
+      return await getAllPosts();
+    }),
+    deletePost: adminProcedure
+      .input(z.object({ postId: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminDeletePost(input.postId);
+        return { success: true };
+      }),
+    listComments: adminProcedure.query(async () => {
+      return await getAllComments();
+    }),
+    deleteComment: adminProcedure
+      .input(z.object({ commentId: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminDeleteComment(input.commentId);
+        return { success: true };
       }),
   }),
 });
