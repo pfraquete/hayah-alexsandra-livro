@@ -23,28 +23,26 @@ export default function CourseManager() {
     const [moduleModal, setModuleModal] = useState<{ open: boolean; module?: any }>({ open: false, module: undefined });
     const [lessonModal, setLessonModal] = useState<{ open: boolean; lesson?: any; moduleId?: number }>({ open: false, lesson: undefined, moduleId: undefined });
 
-    const { data: course, isLoading: loadingCourse } = trpc.marketplace.courses.get.useQuery(
-        { id: courseId! },
-        { enabled: !!courseId }
-    );
-
-    const { data: modules, isLoading: loadingModules, refetch: refetchModules } = trpc.marketplace.courses.getModules.useQuery(
+    const { data: course, isLoading: loadingCourse, refetch: refetchCourse } = trpc.marketplace.courses.getWithContent.useQuery(
         { courseId: courseId! },
         { enabled: !!courseId }
     );
 
-    const deleteModuleMutation = trpc.marketplace.courses.deleteModule.useMutation({
+    const modules = course?.modules || [];
+    const loadingModules = loadingCourse;
+
+    const deleteModuleMutation = trpc.marketplace.modules.delete.useMutation({
         onSuccess: () => {
             toast.success("Módulo excluído com sucesso");
-            refetchModules();
+            refetchCourse();
         },
         onError: (error) => toast.error(error.message),
     });
 
-    const deleteLessonMutation = trpc.marketplace.courses.deleteLesson.useMutation({
+    const deleteLessonMutation = trpc.marketplace.lessons.delete.useMutation({
         onSuccess: () => {
             toast.success("Aula excluída com sucesso");
-            refetchModules();
+            refetchCourse();
         },
         onError: (error) => toast.error(error.message),
     });
@@ -118,7 +116,7 @@ export default function CourseManager() {
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (confirm("Tem certeza que deseja excluir este módulo?")) {
-                                                    deleteModuleMutation.mutate({ moduleId: module.id });
+                                                    deleteModuleMutation.mutate({ moduleId: module.id, courseId: courseId! });
                                                 }
                                             }}
                                         >
@@ -156,7 +154,7 @@ export default function CourseManager() {
                                                             className="text-destructive hover:text-destructive"
                                                             onClick={() => {
                                                                 if (confirm("Tem certeza que deseja excluir esta aula?")) {
-                                                                    deleteLessonMutation.mutate({ lessonId: lesson.id });
+                                                                    deleteLessonMutation.mutate({ lessonId: lesson.id, moduleId: module.id, courseId: courseId! });
                                                                 }
                                                             }}
                                                         >
@@ -207,7 +205,7 @@ export default function CourseManager() {
                 onOpenChange={(open) => setModuleModal(prev => ({ ...prev, open }))}
                 module={moduleModal.module}
                 courseId={courseId}
-                onSuccess={() => refetchModules()}
+                onSuccess={() => refetchCourse()}
             />
 
             <LessonDialog
@@ -215,7 +213,8 @@ export default function CourseManager() {
                 onOpenChange={(open) => setLessonModal(prev => ({ ...prev, open }))}
                 lesson={lessonModal.lesson}
                 moduleId={lessonModal.moduleId}
-                onSuccess={() => refetchModules()}
+                courseId={courseId}
+                onSuccess={() => refetchCourse()}
             />
         </div>
     );

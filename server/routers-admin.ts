@@ -20,6 +20,8 @@ import {
   getAllComments,
   adminDeleteComment,
   updateUser,
+  getAllCourses,
+  getAllDigitalProducts,
 } from "./db-admin";
 import { trackShipment, getTrackingUrl } from "./services/tracking";
 import { sendEmail, orderStatusUpdateEmail } from "./services/email";
@@ -244,5 +246,18 @@ export const adminRouter = router({
         await adminDeleteComment(input.commentId);
         return { success: true };
       }),
+  }),
+
+  // Marketplace Management (Admin View)
+  courses: router({
+    list: adminProcedure.query(async () => {
+      return await getAllCourses();
+    }),
+  }),
+
+  digitalProducts: router({
+    list: adminProcedure.query(async () => {
+      return await getAllDigitalProducts();
+    }),
   }),
 });

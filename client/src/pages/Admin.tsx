@@ -164,12 +164,12 @@ export default function Admin() {
     }
   };
 
-  const { data: courses, isLoading: loadingCourses, refetch: refetchCourses } = trpc.marketplace.courses.myCourses.useQuery(undefined, {
-    enabled: !!dbUser && dbUser.role === 'admin',
+  const { data: courses, isLoading: loadingCourses, refetch: refetchCourses } = trpc.admin.courses.list.useQuery(undefined, {
+    enabled: isAdmin,
   });
 
-  const { data: digitalProducts, isLoading: loadingDigitalProducts, refetch: refetchDigitalProducts } = trpc.marketplace.digitalProducts.myProducts.useQuery(undefined, {
-    enabled: !!dbUser && dbUser.role === 'admin',
+  const { data: digitalProducts, isLoading: loadingDigitalProducts, refetch: refetchDigitalProducts } = trpc.admin.digitalProducts.list.useQuery(undefined, {
+    enabled: isAdmin,
   });
 
   const { data: products, isLoading: loadingProducts, refetch: refetchProducts } = trpc.admin.products.list.useQuery(undefined, {
@@ -739,64 +739,67 @@ export default function Admin() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {courses.map((course) => (
-                            <TableRow key={course.id}>
-                              <TableCell className="font-medium">#{course.id}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-3">
-                                  {course.thumbnailUrl && (
-                                    <img
-                                      src={course.thumbnailUrl}
-                                      alt={course.title}
-                                      className="w-10 h-10 rounded object-cover"
-                                    />
-                                  )}
-                                  <div>
-                                    <div className="font-medium">{course.title}</div>
-                                    <div className="text-sm text-muted-foreground">{course.slug}</div>
+                          {courses.map((item) => {
+                            const course = item.course;
+                            return (
+                              <TableRow key={course.id}>
+                                <TableCell className="font-medium">#{course.id}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    {course.thumbnailUrl && (
+                                      <img
+                                        src={course.thumbnailUrl}
+                                        alt={course.title}
+                                        className="w-10 h-10 rounded object-cover"
+                                      />
+                                    )}
+                                    <div>
+                                      <div className="font-medium">{course.title}</div>
+                                      <div className="text-sm text-muted-foreground">{course.slug}</div>
+                                    </div>
                                   </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-semibold">
-                                  R$ {(course.priceCents / 100).toFixed(2)}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={course.status === 'published' ? 'default' : 'secondary'}>
-                                  {course.status === 'published' ? 'Publicado' : course.status === 'draft' ? 'Rascunho' : 'Arquivado'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setCourseModal({ open: true, course })}
-                                  >
-                                    Editar
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    asChild
-                                  >
-                                    <Link to={`/admin/courses/${course.id}`}>
-                                      Gerenciar Conteúdo
-                                    </Link>
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleDeleteCourse(course.id)}
-                                    disabled={deleteCourseMutation.isPending}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-semibold">
+                                    R$ {(course.priceCents / 100).toFixed(2)}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={course.status === 'published' ? 'default' : 'secondary'}>
+                                    {course.status === 'published' ? 'Publicado' : course.status === 'draft' ? 'Rascunho' : 'Arquivado'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setCourseModal({ open: true, course })}
+                                    >
+                                      Editar
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      asChild
+                                    >
+                                      <Link to={`/admin/courses/${course.id}`}>
+                                        Gerenciar Conteúdo
+                                      </Link>
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleDeleteCourse(course.id)}
+                                      disabled={deleteCourseMutation.isPending}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
@@ -850,66 +853,69 @@ export default function Admin() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {digitalProducts.map((product) => (
-                            <TableRow key={product.id}>
-                              <TableCell className="font-medium">#{product.id}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-3">
-                                  {product.thumbnailUrl && (
-                                    <img
-                                      src={product.thumbnailUrl}
-                                      alt={product.title}
-                                      className="w-10 h-10 rounded object-cover"
-                                    />
-                                  )}
-                                  <div>
-                                    <div className="font-medium">{product.title}</div>
-                                    <div className="text-sm text-muted-foreground">{product.slug}</div>
+                          {digitalProducts.map((item) => {
+                            const product = item.product;
+                            return (
+                              <TableRow key={product.id}>
+                                <TableCell className="font-medium">#{product.id}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    {product.thumbnailUrl && (
+                                      <img
+                                        src={product.thumbnailUrl}
+                                        alt={product.title}
+                                        className="w-10 h-10 rounded object-cover"
+                                      />
+                                    )}
+                                    <div>
+                                      <div className="font-medium">{product.title}</div>
+                                      <div className="text-sm text-muted-foreground">{product.slug}</div>
+                                    </div>
                                   </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-semibold">
-                                  R$ {(product.priceCents / 100).toFixed(2)}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={product.status === 'published' ? 'default' : 'secondary'}>
-                                  {product.status === 'published' ? 'Publicado' : product.status === 'draft' ? 'Rascunho' : 'Arquivado'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setDigitalProductModal({ open: true, product })}
-                                  >
-                                    Editar
-                                  </Button>
-                                  {product.fileUrl && (
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-semibold">
+                                    R$ {(product.priceCents / 100).toFixed(2)}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={product.status === 'published' ? 'default' : 'secondary'}>
+                                    {product.status === 'published' ? 'Publicado' : product.status === 'draft' ? 'Rascunho' : 'Arquivado'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
                                     <Button
                                       size="sm"
-                                      variant="ghost"
-                                      asChild
+                                      variant="outline"
+                                      onClick={() => setDigitalProductModal({ open: true, product })}
                                     >
-                                      <a href={product.fileUrl} target="_blank" rel="noopener noreferrer">
-                                        <ExternalLink className="h-4 w-4" />
-                                      </a>
+                                      Editar
                                     </Button>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleDeleteDigitalProduct(product.id)}
-                                    disabled={deleteDigitalProductMutation.isPending}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                                    {product.fileUrl && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        asChild
+                                      >
+                                        <a href={product.fileUrl} target="_blank" rel="noopener noreferrer">
+                                          <ExternalLink className="h-4 w-4" />
+                                        </a>
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleDeleteDigitalProduct(product.id)}
+                                      disabled={deleteDigitalProductMutation.isPending}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>

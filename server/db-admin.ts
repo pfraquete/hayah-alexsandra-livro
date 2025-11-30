@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { getDb } from "./db";
-import { orders, orderItems, users, shipments, products, posts, postComments, creatorProfiles, type InsertShipment } from "../drizzle/schema";
+import { orders, orderItems, users, shipments, products, posts, postComments, creatorProfiles, courses, digitalProducts, type InsertShipment } from "../drizzle/schema";
 
 export async function getAllOrders() {
   const db = await getDb();
@@ -254,4 +254,42 @@ export async function adminDeleteComment(commentId: number) {
   if (!db) throw new Error("Database not available");
 
   await db.delete(postComments).where(eq(postComments.id, commentId));
+}
+
+// ============================================================
+// Marketplace Management (Admin View)
+// ============================================================
+
+export async function getAllCourses() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      course: courses,
+      creator: {
+        id: creatorProfiles.id,
+        displayName: creatorProfiles.displayName,
+      },
+    })
+    .from(courses)
+    .leftJoin(creatorProfiles, eq(courses.creatorId, creatorProfiles.id))
+    .orderBy(desc(courses.createdAt));
+}
+
+export async function getAllDigitalProducts() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      product: digitalProducts,
+      creator: {
+        id: creatorProfiles.id,
+        displayName: creatorProfiles.displayName,
+      },
+    })
+    .from(digitalProducts)
+    .leftJoin(creatorProfiles, eq(digitalProducts.creatorId, creatorProfiles.id))
+    .orderBy(desc(digitalProducts.createdAt));
 }

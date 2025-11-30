@@ -44,6 +44,7 @@ interface LessonDialogProps {
     onOpenChange: (open: boolean) => void;
     lesson?: any;
     moduleId?: number;
+    courseId: number | null;
     onSuccess: () => void;
 }
 
@@ -52,6 +53,7 @@ export function LessonDialog({
     onOpenChange,
     lesson,
     moduleId,
+    courseId,
     onSuccess,
 }: LessonDialogProps) {
     const [isUploading, setIsUploading] = useState(false);
@@ -93,7 +95,7 @@ export function LessonDialog({
         }
     }, [lesson, form, open]);
 
-    const createMutation = trpc.marketplace.courses.createLesson.useMutation({
+    const createMutation = trpc.marketplace.lessons.create.useMutation({
         onSuccess: () => {
             toast.success("Aula criada com sucesso!");
             onSuccess();
@@ -104,7 +106,7 @@ export function LessonDialog({
         },
     });
 
-    const updateMutation = trpc.marketplace.courses.updateLesson.useMutation({
+    const updateMutation = trpc.marketplace.lessons.update.useMutation({
         onSuccess: () => {
             toast.success("Aula atualizada com sucesso!");
             onSuccess();
@@ -139,6 +141,7 @@ export function LessonDialog({
     };
 
     const onSubmit = async (values: LessonFormValues) => {
+        if (!courseId) return;
         if (!moduleId && !lesson) return;
 
         const payload = {
@@ -153,11 +156,14 @@ export function LessonDialog({
         if (lesson) {
             await updateMutation.mutateAsync({
                 lessonId: lesson.id,
+                courseId,
+                moduleId: moduleId || lesson.moduleId, // Ensure moduleId is passed
                 ...payload,
             });
         } else if (moduleId) {
             await createMutation.mutateAsync({
                 moduleId,
+                courseId,
                 ...payload,
             });
         }

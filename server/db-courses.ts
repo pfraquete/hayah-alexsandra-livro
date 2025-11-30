@@ -236,6 +236,18 @@ export async function updateModule(moduleId: number, data: Partial<InsertCourseM
     .where(eq(courseModules.id, moduleId));
 }
 
+export async function getModuleById(moduleId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(courseModules)
+    .where(eq(courseModules.id, moduleId))
+    .limit(1);
+  return result[0] || null;
+}
+
 export async function deleteModule(moduleId: number, courseId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -697,6 +709,18 @@ export async function deleteDigitalProduct(productId: number, creatorId: number)
 
   // Delete product
   await db.delete(digitalProducts).where(eq(digitalProducts.id, productId));
+}
+
+export async function getDigitalProductById(productId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(digitalProducts)
+    .where(eq(digitalProducts.id, productId))
+    .limit(1);
+  return result[0] || null;
 }
 
 export async function getDigitalProductBySlug(slug: string) {

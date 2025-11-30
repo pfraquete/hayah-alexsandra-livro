@@ -73,7 +73,7 @@ export function ModuleDialog({
         }
     }, [module, form, open]);
 
-    const createMutation = trpc.marketplace.courses.createModule.useMutation({
+    const createMutation = trpc.marketplace.modules.create.useMutation({
         onSuccess: () => {
             toast.success("Módulo criado com sucesso!");
             onSuccess();
@@ -84,7 +84,7 @@ export function ModuleDialog({
         },
     });
 
-    const updateMutation = trpc.marketplace.courses.updateModule.useMutation({
+    const updateMutation = trpc.marketplace.modules.update.useMutation({
         onSuccess: () => {
             toast.success("Módulo atualizado com sucesso!");
             onSuccess();
@@ -101,6 +101,7 @@ export function ModuleDialog({
         if (module) {
             await updateMutation.mutateAsync({
                 moduleId: module.id,
+                courseId: courseId!,
                 title: values.title,
                 description: values.description,
                 orderIndex: values.orderIndex,

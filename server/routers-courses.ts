@@ -17,7 +17,6 @@ import {
   reorderModules,
   createLesson,
   updateLesson,
-  getLessonById,
   deleteLesson,
   reorderLessons,
   createEnrollment,
@@ -39,6 +38,9 @@ import {
   hasUserPurchasedProduct,
   incrementDownloadCount,
   deleteDigitalProduct,
+  getDigitalProductById,
+  getModuleById,
+  getLessonById,
 } from "./db-courses";
 
 // Helper to generate slug from title
@@ -174,7 +176,8 @@ export const coursesRouter = router({
       }
 
       const course = await getCourseById(input.courseId);
-      if (!course || course.creatorId !== profile.id) {
+      const isAdmin = ctx.user.role === 'admin';
+      if (!course || (!isAdmin && course.creatorId !== profile.id)) {
         throw new Error("Curso não encontrado ou você não tem permissão");
       }
 
@@ -200,7 +203,8 @@ export const coursesRouter = router({
       }
 
       const course = await getCourseById(input.courseId);
-      if (!course || course.creatorId !== profile.id) {
+      const isAdmin = ctx.user.role === 'admin';
+      if (!course || (!isAdmin && course.creatorId !== profile.id)) {
         throw new Error("Curso não encontrado ou você não tem permissão");
       }
 
@@ -237,7 +241,8 @@ export const modulesRouter = router({
       }
 
       const course = await getCourseById(input.courseId);
-      if (!course || course.creatorId !== profile.id) {
+      const isAdmin = ctx.user.role === 'admin';
+      if (!course || (!isAdmin && course.creatorId !== profile.id)) {
         throw new Error("Curso não encontrado ou você não tem permissão");
       }
 
@@ -247,15 +252,32 @@ export const modulesRouter = router({
 
   // Update module
   update: protectedProcedure
-    .input(
-      z.object({
-        moduleId: z.number(),
-        title: z.string().min(1).max(255).optional(),
-        description: z.string().optional(),
-      })
-    )
+    .input(z.object({
+      moduleId: z.number(),
+      courseId: z.number(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      orderIndex: z.number().optional(),
+    }))
     .mutation(async ({ input, ctx }) => {
-      const { moduleId, ...data } = input;
+      const { moduleId, courseId, ...data } = input;
+
+      const module = await getModuleById(moduleId);
+      if (!module) throw new Error("Módulo não encontrado");
+      if (module.courseId !== courseId) throw new Error("Módulo não pertence ao curso");
+
+      const course = await getCourseById(courseId);
+      const isAdmin = ctx.user.role === 'admin';
+
+      if (!course) throw new Error("Curso não encontrado");
+
+      if (!isAdmin) {
+        const profile = await getCreatorProfileByUserId(ctx.user.id);
+        if (!profile || course.creatorId !== profile.id) {
+          throw new Error("Você não tem permissão");
+        }
+      }
+
       await updateModule(moduleId, data);
       return { success: true };
     }),
@@ -263,8 +285,26 @@ export const modulesRouter = router({
   // Delete module
   delete: protectedProcedure
     .input(z.object({ moduleId: z.number(), courseId: z.number() }))
-    .mutation(async ({ input }) => {
-      await deleteModule(input.moduleId, input.courseId);
+    .mutation(async ({ input, ctx }) => {
+      const { moduleId, courseId } = input;
+
+      const module = await getModuleById(moduleId);
+      if (!module) throw new Error("Módulo não encontrado");
+      if (module.courseId !== courseId) throw new Error("Módulo não pertence ao curso");
+
+      const course = await getCourseById(courseId);
+      const isAdmin = ctx.user.role === 'admin';
+
+      if (!course) throw new Error("Curso não encontrado");
+
+      if (!isAdmin) {
+        const profile = await getCreatorProfileByUserId(ctx.user.id);
+        if (!profile || course.creatorId !== profile.id) {
+          throw new Error("Você não tem permissão");
+        }
+      }
+
+      await deleteModule(moduleId, courseId);
       return { success: true };
     }),
 
@@ -338,7 +378,8 @@ export const lessonsRouter = router({
       }
 
       const course = await getCourseById(input.courseId);
-      if (!course || course.creatorId !== profile.id) {
+      const isAdmin = ctx.user.role === 'admin';
+      if (!course || (!isAdmin && course.creatorId !== profile.id)) {
         throw new Error("Curso não encontrado ou você não tem permissão");
       }
 
@@ -348,36 +389,70 @@ export const lessonsRouter = router({
 
   // Update lesson
   update: protectedProcedure
-    .input(
-      z.object({
-        lessonId: z.number(),
-        title: z.string().min(1).max(255).optional(),
-        description: z.string().optional(),
-        lessonType: z.enum(["video", "text", "quiz", "download"]).optional(),
-        videoUrl: z.string().max(500).optional(),
-        videoDurationSeconds: z.number().optional(),
-        content: z.string().optional(),
-        downloadUrl: z.string().max(500).optional(),
-        isFree: z.boolean().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const { lessonId, ...data } = input;
+    .input(z.object({
+      lessonId: z.number(),
+      courseId: z.number(),
+      moduleId: z.number().optional(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      lessonType: z.enum(["video", "text", "quiz", "download"]).optional(),
+      videoUrl: z.string().optional(),
+      videoDurationSeconds: z.number().optional(),
+      content: z.string().optional(),
+      downloadUrl: z.string().optional(),
+      isFree: z.boolean().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { lessonId, courseId, ...data } = input;
+
+      const lesson = await getLessonById(lessonId);
+      if (!lesson) throw new Error("Aula não encontrada");
+
+      const module = await getModuleById(lesson.moduleId);
+      if (!module || module.courseId !== courseId) throw new Error("Aula não pertence ao curso");
+
+      const course = await getCourseById(courseId);
+      const isAdmin = ctx.user.role === 'admin';
+
+      if (!course) throw new Error("Curso não encontrado");
+
+      if (!isAdmin) {
+        const profile = await getCreatorProfileByUserId(ctx.user.id);
+        if (!profile || course.creatorId !== profile.id) {
+          throw new Error("Você não tem permissão");
+        }
+      }
+
       await updateLesson(lessonId, data);
       return { success: true };
     }),
 
   // Delete lesson
   delete: protectedProcedure
-    .input(
-      z.object({
-        lessonId: z.number(),
-        moduleId: z.number(),
-        courseId: z.number(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      await deleteLesson(input.lessonId, input.moduleId, input.courseId);
+    .input(z.object({ lessonId: z.number(), moduleId: z.number(), courseId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const { lessonId, moduleId, courseId } = input;
+
+      const lesson = await getLessonById(lessonId);
+      if (!lesson) throw new Error("Aula não encontrada");
+      if (lesson.moduleId !== moduleId) throw new Error("Aula não pertence ao módulo");
+
+      const module = await getModuleById(moduleId);
+      if (!module || module.courseId !== courseId) throw new Error("Módulo não pertence ao curso");
+
+      const course = await getCourseById(courseId);
+      const isAdmin = ctx.user.role === 'admin';
+
+      if (!course) throw new Error("Curso não encontrado");
+
+      if (!isAdmin) {
+        const profile = await getCreatorProfileByUserId(ctx.user.id);
+        if (!profile || course.creatorId !== profile.id) {
+          throw new Error("Você não tem permissão");
+        }
+      }
+
+      await deleteLesson(lessonId, moduleId, courseId);
       return { success: true };
     }),
 
@@ -618,8 +693,20 @@ export const digitalProductsRouter = router({
         status: z.enum(["draft", "published", "archived"]).optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { productId, ...data } = input;
+
+      const product = await getDigitalProductById(productId);
+      if (!product) throw new Error("Produto não encontrado");
+
+      const isAdmin = ctx.user.role === 'admin';
+      if (!isAdmin) {
+        const profile = await getCreatorProfileByUserId(ctx.user.id);
+        if (!profile || product.creatorId !== profile.id) {
+          throw new Error("Você não tem permissão");
+        }
+      }
+
       await updateDigitalProduct(productId, data);
       return { success: true };
     }),
@@ -628,11 +715,20 @@ export const digitalProductsRouter = router({
   delete: protectedProcedure
     .input(z.object({ productId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      const profile = await getCreatorProfileByUserId(ctx.user.id);
-      if (!profile) {
-        throw new Error("Perfil não encontrado");
+      const product = await getDigitalProductById(input.productId);
+      if (!product) throw new Error("Produto não encontrado");
+
+      const isAdmin = ctx.user.role === 'admin';
+      if (!isAdmin) {
+        const profile = await getCreatorProfileByUserId(ctx.user.id);
+        if (!profile || product.creatorId !== profile.id) {
+          throw new Error("Você não tem permissão");
+        }
+        await deleteDigitalProduct(input.productId, profile.id);
+      } else {
+        // Admin delete - pass 0 as creatorId since it's ignored or we can pass product.creatorId
+        await deleteDigitalProduct(input.productId, product.creatorId);
       }
-      await deleteDigitalProduct(input.productId, profile.id);
       return { success: true };
     }),
 
