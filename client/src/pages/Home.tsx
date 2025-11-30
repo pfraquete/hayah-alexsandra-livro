@@ -63,12 +63,12 @@ export default function Home() {
           <div className="flex gap-3 items-center md:hidden">
             {isAuthenticated ? (
               <Button
-                onClick={() => setLocation('/minha-conta/pedidos')}
+                onClick={() => setLocation('/dashboard')}
                 variant="ghost"
-                size="icon"
-                className="text-[var(--rosa-principal)]"
+                size="sm"
+                className="text-[var(--rosa-principal)] font-medium"
               >
-                <User className="h-5 w-5" />
+                Ir para o App
               </Button>
             ) : (
               <Button

@@ -14,6 +14,8 @@ import MinhaContaPedidos from "./pages/MinhaContaPedidos";
 import DetalhesPedido from "./pages/DetalhesPedido";
 import Admin from "./pages/Admin";
 import Produto from "./pages/Produto";
+import Dashboard from "./pages/Dashboard";
+import DashboardLayout from "./components/DashboardLayout";
 
 // Community Pages
 import Feed from "./pages/comunidade/Feed";
@@ -38,24 +40,32 @@ function Router() {
       <Route path={"/produto"} component={Produto} />
       <Route path={"/404"} component={NotFound} />
 
-      {/* Auth routes - redirect to home if already logged in */}
+      {/* Auth routes - redirect to dashboard if already logged in */}
       <Route path={"/login"}>
-        <ProtectedRoute redirectIfAuthenticated>
+        <ProtectedRoute redirectIfAuthenticated authenticatedRedirectTo="/dashboard">
           <Login />
         </ProtectedRoute>
       </Route>
       <Route path={"/cadastro"}>
-        <ProtectedRoute redirectIfAuthenticated>
+        <ProtectedRoute redirectIfAuthenticated authenticatedRedirectTo="/dashboard">
           <Cadastro />
         </ProtectedRoute>
       </Route>
       <Route path={"/recuperar-senha"}>
-        <ProtectedRoute redirectIfAuthenticated>
+        <ProtectedRoute redirectIfAuthenticated authenticatedRedirectTo="/dashboard">
           <RecuperarSenha />
         </ProtectedRoute>
       </Route>
 
       {/* Protected routes - require authentication */}
+      <Route path={"/dashboard"}>
+        <ProtectedRoute>
+          <DashboardLayout>
+            <Dashboard />
+          </DashboardLayout>
+        </ProtectedRoute>
+      </Route>
+
       <Route path={"/checkout"}>
         <ProtectedRoute>
           <Checkout />
@@ -63,13 +73,17 @@ function Router() {
       </Route>
       <Route path={"/minha-conta/pedidos"}>
         <ProtectedRoute>
-          <MinhaContaPedidos />
+          <DashboardLayout>
+            <MinhaContaPedidos />
+          </DashboardLayout>
         </ProtectedRoute>
       </Route>
       <Route path={"/minha-conta/pedidos/:id"}>
         {(params) => (
           <ProtectedRoute>
-            <DetalhesPedido />
+            <DashboardLayout>
+              <DetalhesPedido />
+            </DashboardLayout>
           </ProtectedRoute>
         )}
       </Route>
@@ -82,18 +96,54 @@ function Router() {
       </Route>
 
       {/* Community routes */}
-      <Route path={"/comunidade"} component={Feed} />
-      <Route path={"/comunidade/explorar"} component={Feed} />
-      <Route path={"/comunidade/criadora/:id"} component={CreatorProfile} />
+      <Route path={"/comunidade"}>
+        <ProtectedRoute>
+          <DashboardLayout>
+            <Feed />
+          </DashboardLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/comunidade/explorar"}>
+        <ProtectedRoute>
+          <DashboardLayout>
+            <Feed />
+          </DashboardLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/comunidade/criadora/:id"}>
+        {(params) => (
+          <ProtectedRoute>
+            <DashboardLayout>
+              <CreatorProfile />
+            </DashboardLayout>
+          </ProtectedRoute>
+        )}
+      </Route>
       <Route path={"/comunidade/tornar-criadora"}>
         <ProtectedRoute>
-          <TornarCriadora />
+          <DashboardLayout>
+            <TornarCriadora />
+          </DashboardLayout>
         </ProtectedRoute>
       </Route>
 
       {/* Marketplace routes */}
-      <Route path={"/marketplace"} component={Marketplace} />
-      <Route path={"/curso/:slug"} component={CourseDetails} />
+      <Route path={"/marketplace"}>
+        <ProtectedRoute>
+          <DashboardLayout>
+            <Marketplace />
+          </DashboardLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/curso/:slug"}>
+        {(params) => (
+          <ProtectedRoute>
+            <DashboardLayout>
+              <CourseDetails />
+            </DashboardLayout>
+          </ProtectedRoute>
+        )}
+      </Route>
       <Route path={"/curso/:slug/assistir"}>
         <ProtectedRoute>
           <CoursePlayer />
@@ -101,19 +151,25 @@ function Router() {
       </Route>
       <Route path={"/meus-cursos"}>
         <ProtectedRoute>
-          <MyCourses />
+          <DashboardLayout>
+            <MyCourses />
+          </DashboardLayout>
         </ProtectedRoute>
       </Route>
 
       {/* Creator routes */}
       <Route path={"/criadora/novo-post"}>
         <ProtectedRoute>
-          <NovoPost />
+          <DashboardLayout>
+            <NovoPost />
+          </DashboardLayout>
         </ProtectedRoute>
       </Route>
       <Route path={"/criadora/cursos"}>
         <ProtectedRoute>
-          <MeusProdutos />
+          <DashboardLayout>
+            <MeusProdutos />
+          </DashboardLayout>
         </ProtectedRoute>
       </Route>
 
@@ -133,7 +189,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider
         defaultTheme="light"
-        // switchable
+      // switchable
       >
         <TooltipProvider>
           <Toaster />
