@@ -15,6 +15,21 @@ import DetalhesPedido from "./pages/DetalhesPedido";
 import Admin from "./pages/Admin";
 import Produto from "./pages/Produto";
 
+// Community Pages
+import Feed from "./pages/comunidade/Feed";
+import CreatorProfile from "./pages/comunidade/CreatorProfile";
+import TornarCriadora from "./pages/comunidade/TornarCriadora";
+
+// Marketplace Pages
+import Marketplace from "./pages/Marketplace";
+import MyCourses from "./pages/MyCourses";
+import CourseDetails from "./pages/CourseDetails";
+import CoursePlayer from "./pages/CoursePlayer";
+
+// Creator Pages
+import NovoPost from "./pages/criadora/NovoPost";
+import MeusProdutos from "./pages/criadora/MeusProdutos";
+
 function Router() {
   return (
     <Switch>
@@ -63,6 +78,42 @@ function Router() {
       <Route path={"/admin"}>
         <ProtectedRoute>
           <Admin />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Community routes */}
+      <Route path={"/comunidade"} component={Feed} />
+      <Route path={"/comunidade/explorar"} component={Feed} />
+      <Route path={"/comunidade/criadora/:id"} component={CreatorProfile} />
+      <Route path={"/comunidade/tornar-criadora"}>
+        <ProtectedRoute>
+          <TornarCriadora />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Marketplace routes */}
+      <Route path={"/marketplace"} component={Marketplace} />
+      <Route path={"/curso/:slug"} component={CourseDetails} />
+      <Route path={"/curso/:slug/assistir"}>
+        <ProtectedRoute>
+          <CoursePlayer />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/meus-cursos"}>
+        <ProtectedRoute>
+          <MyCourses />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Creator routes */}
+      <Route path={"/criadora/novo-post"}>
+        <ProtectedRoute>
+          <NovoPost />
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/criadora/cursos"}>
+        <ProtectedRoute>
+          <MeusProdutos />
         </ProtectedRoute>
       </Route>
 
