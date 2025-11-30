@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/contexts/AuthContext";
+import { uploadFiles, STORAGE_BUCKETS } from "@/lib/storage";
 import CommunityLayout from "@/components/CommunityLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,19 +73,39 @@ export default function NovoPost() {
     try {
       setIsUploading(true);
 
-      // For now, we'll just use placeholder URLs
-      // In production, you would upload to S3 first
-      const mediaUrls = mediaItems.map((item, index) => ({
-        mediaUrl: item.preview, // Replace with actual upload URL
-        mediaType: item.type,
-        thumbnailUrl: item.type === "video" ? item.preview : undefined,
-      }));
+      // Upload files to Supabase Storage
+      let mediaUrls: { mediaUrl: string; mediaType: "image" | "video"; thumbnailUrl?: string }[] = [];
+
+      if (mediaItems.length > 0) {
+        const files = mediaItems.map(item => item.file);
+        const pathPrefix = `${user?.id || 'anonymous'}/${Date.now()}`;
+
+        const { urls, errors } = await uploadFiles(
+          STORAGE_BUCKETS.POST_MEDIA,
+          files,
+          pathPrefix
+        );
+
+        if (errors.length > 0) {
+          console.error("Upload errors:", errors);
+          toast.error("Erro ao fazer upload de alguns arquivos");
+        }
+
+        mediaUrls = urls.map((url, index) => ({
+          mediaUrl: url,
+          mediaType: mediaItems[index].type,
+          thumbnailUrl: mediaItems[index].type === "video" ? url : undefined,
+        }));
+      }
 
       await createPostMutation.mutateAsync({
         content: content.trim() || undefined,
         visibility,
         media: mediaUrls,
       });
+
+      // Clean up object URLs
+      mediaItems.forEach(item => URL.revokeObjectURL(item.preview));
 
       toast.success("Post publicado!");
       navigate("/comunidade");

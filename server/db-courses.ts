@@ -24,6 +24,9 @@ import {
 // ============================================
 
 export async function createCourse(data: InsertCourse) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   const result = await db.insert(courses).values(data).returning({ id: courses.id });
 
   // Increment courses count for creator
@@ -39,6 +42,9 @@ export async function createCourse(data: InsertCourse) {
 }
 
 export async function updateCourse(courseId: number, data: Partial<InsertCourse>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   await db
     .update(courses)
     .set({ ...data, updatedAt: new Date() })
@@ -46,6 +52,9 @@ export async function updateCourse(courseId: number, data: Partial<InsertCourse>
 }
 
 export async function getCourseById(courseId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
   const result = await db
     .select()
     .from(courses)
@@ -55,6 +64,9 @@ export async function getCourseById(courseId: number) {
 }
 
 export async function getCourseBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return null;
+
   const result = await db
     .select({
       course: courses,
@@ -73,6 +85,9 @@ export async function getCourseBySlug(slug: string) {
 }
 
 export async function getCourseWithModules(courseId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
   const course = await getCourseById(courseId);
   if (!course) return null;
 
@@ -97,6 +112,9 @@ export async function getCourseWithModules(courseId: number) {
 }
 
 export async function getPublishedCourses(limit = 20, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+
   return await db
     .select({
       course: courses,
@@ -115,6 +133,9 @@ export async function getPublishedCourses(limit = 20, offset = 0) {
 }
 
 export async function getFeaturedCourses(limit = 6) {
+  const db = await getDb();
+  if (!db) return [];
+
   return await db
     .select({
       course: courses,
@@ -132,6 +153,9 @@ export async function getFeaturedCourses(limit = 6) {
 }
 
 export async function getCreatorCourses(creatorId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
   return await db
     .select()
     .from(courses)
@@ -140,6 +164,9 @@ export async function getCreatorCourses(creatorId: number) {
 }
 
 export async function deleteCourse(courseId: number, creatorId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   // Delete all related data
   const modules = await db
     .select({ id: courseModules.id })
@@ -189,6 +216,9 @@ export async function deleteCourse(courseId: number, creatorId: number) {
 // ============================================
 
 export async function createModule(data: InsertCourseModule) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   const result = await db
     .insert(courseModules)
     .values(data)
@@ -197,6 +227,9 @@ export async function createModule(data: InsertCourseModule) {
 }
 
 export async function updateModule(moduleId: number, data: Partial<InsertCourseModule>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   await db
     .update(courseModules)
     .set({ ...data, updatedAt: new Date() })
@@ -204,6 +237,9 @@ export async function updateModule(moduleId: number, data: Partial<InsertCourseM
 }
 
 export async function deleteModule(moduleId: number, courseId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   // Delete lessons in module
   const lessons = await db
     .select({ id: courseLessons.id })
@@ -225,6 +261,9 @@ export async function deleteModule(moduleId: number, courseId: number) {
 }
 
 export async function reorderModules(courseId: number, moduleIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   for (let i = 0; i < moduleIds.length; i++) {
     await db
       .update(courseModules)
@@ -243,6 +282,9 @@ export async function reorderModules(courseId: number, moduleIds: number[]) {
 // ============================================
 
 export async function createLesson(data: InsertCourseLesson) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   const result = await db
     .insert(courseLessons)
     .values(data)
@@ -256,6 +298,9 @@ export async function createLesson(data: InsertCourseLesson) {
 }
 
 export async function updateLesson(lessonId: number, data: Partial<InsertCourseLesson>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   await db
     .update(courseLessons)
     .set({ ...data, updatedAt: new Date() })
@@ -263,6 +308,9 @@ export async function updateLesson(lessonId: number, data: Partial<InsertCourseL
 }
 
 export async function getLessonById(lessonId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
   const result = await db
     .select()
     .from(courseLessons)
@@ -272,6 +320,9 @@ export async function getLessonById(lessonId: number) {
 }
 
 export async function deleteLesson(lessonId: number, moduleId: number, courseId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   // Delete progress
   await db.delete(lessonProgress).where(eq(lessonProgress.lessonId, lessonId));
 
@@ -284,6 +335,9 @@ export async function deleteLesson(lessonId: number, moduleId: number, courseId:
 }
 
 export async function reorderLessons(moduleId: number, lessonIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   for (let i = 0; i < lessonIds.length; i++) {
     await db
       .update(courseLessons)
@@ -298,6 +352,9 @@ export async function reorderLessons(moduleId: number, lessonIds: number[]) {
 }
 
 async function updateModuleLessonCount(moduleId: number) {
+  const db = await getDb();
+  if (!db) return;
+
   const lessons = await db
     .select({
       count: sql<number>`count(*)`,
@@ -317,6 +374,9 @@ async function updateModuleLessonCount(moduleId: number) {
 }
 
 async function updateCourseLessonCount(courseId: number) {
+  const db = await getDb();
+  if (!db) return;
+
   const lessons = await db
     .select({
       count: sql<number>`count(*)`,
@@ -340,6 +400,9 @@ async function updateCourseLessonCount(courseId: number) {
 // ============================================
 
 export async function createEnrollment(data: InsertCourseEnrollment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   const result = await db
     .insert(courseEnrollments)
     .values(data)
@@ -358,6 +421,9 @@ export async function createEnrollment(data: InsertCourseEnrollment) {
 }
 
 export async function getEnrollment(courseId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
   const result = await db
     .select()
     .from(courseEnrollments)
@@ -372,6 +438,9 @@ export async function getEnrollment(courseId: number, userId: number) {
 }
 
 export async function getUserEnrollments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
   return await db
     .select({
       enrollment: courseEnrollments,
@@ -390,6 +459,9 @@ export async function getUserEnrollments(userId: number) {
 }
 
 export async function updateEnrollmentProgress(enrollmentId: number, courseId: number) {
+  const db = await getDb();
+  if (!db) return;
+
   // Calculate progress
   const totalLessons = await db
     .select({ count: sql<number>`count(*)` })
@@ -432,6 +504,9 @@ export async function updateLessonProgress(
   enrollmentId: number,
   data: { watchedSeconds?: number; isCompleted?: boolean }
 ) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   const existing = await db
     .select()
     .from(lessonProgress)
@@ -471,6 +546,9 @@ export async function updateLessonProgress(
 }
 
 export async function getLessonProgress(lessonId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
   const result = await db
     .select()
     .from(lessonProgress)
@@ -485,6 +563,9 @@ export async function getLessonProgress(lessonId: number, userId: number) {
 }
 
 export async function getCourseProgress(enrollmentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
   return await db
     .select({
       lesson: courseLessons,
@@ -506,6 +587,9 @@ export async function getCourseProgress(enrollmentId: number) {
 // ============================================
 
 export async function createReview(data: InsertCourseReview) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   const result = await db
     .insert(courseReviews)
     .values({ ...data, isVerified: true })
@@ -518,6 +602,9 @@ export async function createReview(data: InsertCourseReview) {
 }
 
 export async function updateReview(reviewId: number, data: { rating?: number; title?: string; content?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   await db
     .update(courseReviews)
     .set({ ...data, updatedAt: new Date() })
@@ -535,6 +622,9 @@ export async function updateReview(reviewId: number, data: { rating?: number; ti
 }
 
 export async function getCourseReviews(courseId: number, limit = 20, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+
   return await db
     .select({
       review: courseReviews,
@@ -552,6 +642,9 @@ export async function getCourseReviews(courseId: number, limit = 20, offset = 0)
 }
 
 async function updateCourseRating(courseId: number) {
+  const db = await getDb();
+  if (!db) return;
+
   const reviews = await db
     .select({
       avgRating: sql<number>`AVG(${courseReviews.rating})`,
@@ -575,6 +668,9 @@ async function updateCourseRating(courseId: number) {
 // ============================================
 
 export async function createDigitalProduct(data: InsertDigitalProduct) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   const result = await db
     .insert(digitalProducts)
     .values(data)
@@ -583,6 +679,9 @@ export async function createDigitalProduct(data: InsertDigitalProduct) {
 }
 
 export async function updateDigitalProduct(productId: number, data: Partial<InsertDigitalProduct>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   await db
     .update(digitalProducts)
     .set({ ...data, updatedAt: new Date() })
@@ -590,6 +689,9 @@ export async function updateDigitalProduct(productId: number, data: Partial<Inse
 }
 
 export async function getDigitalProductBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return null;
+
   const result = await db
     .select({
       product: digitalProducts,
@@ -607,6 +709,9 @@ export async function getDigitalProductBySlug(slug: string) {
 }
 
 export async function getPublishedDigitalProducts(limit = 20, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+
   return await db
     .select({
       product: digitalProducts,
@@ -625,6 +730,9 @@ export async function getPublishedDigitalProducts(limit = 20, offset = 0) {
 }
 
 export async function getCreatorDigitalProducts(creatorId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
   return await db
     .select()
     .from(digitalProducts)
@@ -638,6 +746,9 @@ export async function createDigitalPurchase(
   pricePaidCents: number,
   orderId?: number
 ) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   await db.insert(digitalPurchases).values({
     productId,
     userId,
@@ -656,6 +767,9 @@ export async function createDigitalPurchase(
 }
 
 export async function getUserDigitalPurchases(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
   return await db
     .select({
       purchase: digitalPurchases,
@@ -673,6 +787,9 @@ export async function getUserDigitalPurchases(userId: number) {
 }
 
 export async function hasUserPurchasedProduct(productId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
   const result = await db
     .select()
     .from(digitalPurchases)
@@ -687,6 +804,9 @@ export async function hasUserPurchasedProduct(productId: number, userId: number)
 }
 
 export async function incrementDownloadCount(purchaseId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
   await db
     .update(digitalPurchases)
     .set({
