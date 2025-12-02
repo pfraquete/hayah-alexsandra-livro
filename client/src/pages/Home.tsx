@@ -39,7 +39,7 @@ export default function Home() {
           <div className="flex items-center gap-4 cursor-pointer" onClick={() => setLocation('/')}>
             <img
               src="/assets/images/hayah-logo.png"
-              alt="Hayah Livros"
+              alt="Hayah Essence"
               className="h-10 object-contain"
             />
             <div className="hidden md:block h-8 w-px bg-[var(--rosa-claro)]"></div>
@@ -50,8 +50,9 @@ export default function Home() {
 
           <nav className="hidden md:flex items-center gap-8">
             <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">Início</a>
-            <a href="#sobre-autora" className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">Sobre a Autora</a>
-            <a href="#sobre-livro" className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">O Livro</a>
+            <a href="/loja" className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">Loja</a>
+            <a href="/marketplace" className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">Cursos</a>
+            <a href="/comunidade" className="text-[var(--texto-escuro)] hover:text-[var(--rosa-principal)] font-medium transition-colors">Comunidade</a>
 
             {isAuthenticated ? (
               <Button

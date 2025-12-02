@@ -56,7 +56,7 @@ function Sidebar({ className, onNavigate }: { className?: string; onNavigate?: (
       {/* Logo */}
       <div className="p-4 border-b">
         <Link href="/" onClick={handleNavigation}>
-          <h1 className="text-xl font-bold text-primary">Hayah</h1>
+          <h1 className="text-xl font-bold text-primary">Hayah Essence</h1>
           <p className="text-xs text-muted-foreground">Comunidade</p>
         </Link>
       </div>
@@ -186,7 +186,7 @@ export default function CommunityLayout({ children }: CommunityLayoutProps) {
           </SheetContent>
         </Sheet>
         <Link href="/comunidade" className="ml-3">
-          <h1 className="text-lg font-bold text-primary">Hayah</h1>
+          <h1 className="text-lg font-bold text-primary">Hayah Essence</h1>
         </Link>
       </header>
 

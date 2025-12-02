@@ -10,7 +10,7 @@ export function Footer() {
             <div className="flex items-center gap-3">
               <img
                 src="/assets/images/hayah-logo.png"
-                alt="Hayah Livros"
+                alt="Hayah Essence"
                 className="h-8 object-contain"
               />
               <div className="h-6 w-px bg-[var(--rosa-profundo)]/20"></div>
@@ -27,9 +27,10 @@ export function Footer() {
           <div>
             <h4 className="font-serif font-bold text-[var(--preto-suave)] mb-4">Links Rápidos</h4>
             <ul className="space-y-2 text-sm text-[var(--texto-suave)]">
-              <li><a href="#" className="hover:text-[var(--rosa-principal)] transition-colors">Início</a></li>
-              <li><a href="#sobre-autora" className="hover:text-[var(--rosa-principal)] transition-colors">Sobre a Autora</a></li>
-              <li><a href="#sobre-livro" className="hover:text-[var(--rosa-principal)] transition-colors">O Livro</a></li>
+              <li><a href="/" className="hover:text-[var(--rosa-principal)] transition-colors">Início</a></li>
+              <li><a href="/loja" className="hover:text-[var(--rosa-principal)] transition-colors">Loja de Livros</a></li>
+              <li><a href="/marketplace" className="hover:text-[var(--rosa-principal)] transition-colors">Cursos Online</a></li>
+              <li><a href="/comunidade" className="hover:text-[var(--rosa-principal)] transition-colors">Comunidade</a></li>
               <li><a href="/login" className="hover:text-[var(--rosa-principal)] transition-colors">Minha Conta</a></li>
             </ul>
           </div>
@@ -52,7 +53,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-[var(--rosa-profundo)]/10 pt-8 text-center text-xs text-[var(--texto-suave)]">
-          <p>&copy; {new Date().getFullYear()} Hayah Livros & Empreendedoras do Reino. Todos os direitos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Hayah Essence & Empreendedoras do Reino. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

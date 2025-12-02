@@ -174,7 +174,7 @@ function DashboardLayoutContent({
                 <div className="flex items-center gap-2 min-w-0 animate-fade-in">
                   <img
                     src="/assets/images/hayah-logo.png"
-                    alt="Hayah Livros"
+                    alt="Hayah Essence"
                     className="h-8 object-contain"
                   />
                 </div>
