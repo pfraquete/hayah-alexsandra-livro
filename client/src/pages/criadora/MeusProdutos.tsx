@@ -119,9 +119,46 @@ export default function MeusLivros() {
   };
 
   const handleCreate = () => {
+    // Validação básica
     if (!productForm.name || !productForm.priceCents) {
-      toast.error("Preencha os campos obrigatórios");
+      toast.error("Preencha o nome e o preço do produto");
       return;
+    }
+
+    // Validação para produtos físicos
+    if (productForm.productType === 'physical') {
+      if (!productForm.stockQuantity || productForm.stockQuantity <= 0) {
+        toast.error("⚠️ Informe a quantidade em estoque");
+        return;
+      }
+      if (!productForm.weightGrams || productForm.weightGrams <= 0) {
+        toast.error("⚠️ Informe o peso do produto (necessário para calcular frete)");
+        return;
+      }
+      if (!productForm.widthCm || productForm.widthCm <= 0) {
+        toast.error("⚠️ Informe a largura do produto (necessário para calcular frete)");
+        return;
+      }
+      if (!productForm.heightCm || productForm.heightCm <= 0) {
+        toast.error("⚠️ Informe a altura do produto (necessário para calcular frete)");
+        return;
+      }
+      if (!productForm.depthCm || productForm.depthCm <= 0) {
+        toast.error("⚠️ Informe a profundidade do produto (necessário para calcular frete)");
+        return;
+      }
+    }
+
+    // Validação para produtos digitais
+    if (productForm.productType === 'digital') {
+      if (!productForm.fileUrl) {
+        toast.error("⚠️ Informe a URL do arquivo digital");
+        return;
+      }
+      if (!productForm.fileType) {
+        toast.error("⚠️ Informe o tipo do arquivo (PDF, ePub, etc)");
+        return;
+      }
     }
 
     createMutation.mutate(productForm);
@@ -398,10 +435,15 @@ export default function MeusLivros() {
               {/* Physical Product Fields */}
               {productForm.productType === "physical" && (
                 <div className="space-y-4 border-t pt-4">
-                  <h3 className="font-semibold">Informações de Envio</h3>
+                  <div>
+                    <h3 className="font-semibold">Informações de Envio</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      📦 Estas informações são necessárias para calcular o frete via Correios
+                    </p>
+                  </div>
 
                   <div>
-                    <Label>Estoque Disponível</Label>
+                    <Label>Estoque Disponível <span className="text-red-500">*</span></Label>
                     <Input
                       type="number"
                       value={productForm.stockQuantity || 0}
@@ -417,7 +459,7 @@ export default function MeusLivros() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Peso (gramas)</Label>
+                      <Label>Peso (gramas) <span className="text-red-500">*</span></Label>
                       <Input
                         type="number"
                         value={productForm.weightGrams || ""}
@@ -431,7 +473,7 @@ export default function MeusLivros() {
                       />
                     </div>
                     <div>
-                      <Label>Largura (cm)</Label>
+                      <Label>Largura (cm) <span className="text-red-500">*</span></Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -449,7 +491,7 @@ export default function MeusLivros() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Altura (cm)</Label>
+                      <Label>Altura (cm) <span className="text-red-500">*</span></Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -464,7 +506,7 @@ export default function MeusLivros() {
                       />
                     </div>
                     <div>
-                      <Label>Profundidade (cm)</Label>
+                      <Label>Profundidade (cm) <span className="text-red-500">*</span></Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -485,10 +527,15 @@ export default function MeusLivros() {
               {/* Digital Product Fields */}
               {productForm.productType === "digital" && (
                 <div className="space-y-4 border-t pt-4">
-                  <h3 className="font-semibold">Arquivo Digital</h3>
+                  <div>
+                    <h3 className="font-semibold">Arquivo Digital</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      💾 O cliente poderá baixar este arquivo após a compra
+                    </p>
+                  </div>
 
                   <div>
-                    <Label>URL do Arquivo</Label>
+                    <Label>URL do Arquivo <span className="text-red-500">*</span></Label>
                     <Input
                       value={productForm.fileUrl || ""}
                       onChange={(e) =>
@@ -502,7 +549,7 @@ export default function MeusLivros() {
                   </div>
 
                   <div>
-                    <Label>Tipo de Arquivo</Label>
+                    <Label>Tipo de Arquivo <span className="text-red-500">*</span></Label>
                     <Select
                       value={productForm.fileType || ""}
                       onValueChange={(value) =>
