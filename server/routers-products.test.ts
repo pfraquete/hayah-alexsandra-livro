@@ -13,6 +13,7 @@ vi.mock("./db-products", () => ({
   getUserOrders: vi.fn(),
   getOrderById: vi.fn(),
   getOrderItems: vi.fn(),
+  decrementProductStock: vi.fn(),
 }));
 
 // Mock the payment and email services
@@ -41,6 +42,7 @@ import {
   getUserOrders,
   getOrderById,
   getOrderItems,
+  decrementProductStock,
 } from "./db-products";
 import { createPixPayment } from "./services/pagarme";
 import { sendEmail } from "./services/email";
@@ -92,6 +94,21 @@ describe("checkoutRouter", () => {
 
   describe("calculateShipping", () => {
     it("should return shipping options for valid CEP", async () => {
+      const mockProduct = {
+        id: 1,
+        name: "Test Book",
+        slug: "test-book",
+        priceCents: 5000,
+        active: true,
+        stockQuantity: 10,
+        weightGrams: 300,
+        widthCm: "14",
+        heightCm: "21",
+        depthCm: "2",
+      };
+      
+      vi.mocked(getProductById).mockResolvedValue(mockProduct as any);
+      
       const ctx = createMockContext();
       const caller = checkoutRouter.createCaller(ctx);
 
@@ -102,8 +119,8 @@ describe("checkoutRouter", () => {
       });
 
       expect(result.options).toHaveLength(2);
-      expect(result.options[0].name).toBe("PAC");
-      expect(result.options[1].name).toBe("SEDEX");
+      expect(result.options[0].name).toBe("PAC - Correios");
+      expect(result.options[1].name).toBe("SEDEX - Correios");
       expect(result.options[0].priceCents).toBeLessThan(result.options[1].priceCents);
     });
   });
@@ -152,6 +169,7 @@ describe("checkoutRouter", () => {
 
     it("should create order successfully with PIX payment", async () => {
       vi.mocked(getProductById).mockResolvedValue(mockProduct as any);
+      vi.mocked(decrementProductStock).mockResolvedValue(undefined);
       vi.mocked(createAddress).mockResolvedValue(1);
       vi.mocked(createOrder).mockResolvedValue(100);
       vi.mocked(createOrderItems).mockResolvedValue(undefined);

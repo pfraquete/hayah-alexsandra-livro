@@ -39,7 +39,7 @@ const creatorNavItems = [
 
 function Sidebar({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const { data: creatorProfile } = trpc.social.creator.myProfile.useQuery(undefined, {
     enabled: !!user,
   });
@@ -141,12 +141,12 @@ function Sidebar({ className, onNavigate }: { className?: string; onNavigate?: (
             <Avatar>
               <AvatarImage src={creatorProfile?.avatarUrl || undefined} />
               <AvatarFallback>
-                {user.name?.charAt(0) || user.email?.charAt(0) || "U"}
+                {user.user_metadata?.name?.charAt(0) || user.email?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {creatorProfile?.displayName || user.name || "Usuario"}
+                {creatorProfile?.displayName || user.user_metadata?.name || "Usuario"}
               </p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
@@ -158,7 +158,7 @@ function Sidebar({ className, onNavigate }: { className?: string; onNavigate?: (
                 Perfil
               </Button>
             </Link>
-            <Button variant="ghost" size="sm" onClick={logout}>
+            <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

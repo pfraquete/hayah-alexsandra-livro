@@ -8,41 +8,41 @@ Este documento lista todas as variáveis de ambiente necessárias para configura
 
 ## 🔧 Variáveis Obrigatórias
 
-### 1. Banco de Dados
+### 1. Banco de Dados (PostgreSQL via Supabase)
 - **`DATABASE_URL`**
-  - **Descrição**: URL de conexão com o banco de dados MySQL
-  - **Formato**: `mysql://user:password@host:port/database`
-  - **Exemplo**: `mysql://admin:senha123@db.example.com:3306/hayah_livros`
+  - **Descrição**: URL de conexão com o banco de dados PostgreSQL do Supabase
+  - **Formato**: `postgresql://user:password@host:port/database`
+  - **Exemplo**: `postgresql://postgres:senha@db.xxx.supabase.co:5432/postgres`
   - **Ambiente**: Production, Preview, Development
+  - **Obtenção**: Supabase Dashboard → Settings → Database → Connection String (Transaction pooler)
 
 ---
 
-## 🔐 Variáveis de Autenticação e Segurança
+## 🔐 Variáveis de Autenticação (Supabase)
 
-### 2. JWT Secret
-- **`JWT_SECRET`**
-  - **Descrição**: Chave secreta para assinatura de tokens JWT
-  - **Formato**: String aleatória segura
-  - **Exemplo**: `sua-chave-secreta-muito-segura-aqui`
-  - **Ambiente**: Production, Preview, Development
-
-### 3. OAuth Configuration
-- **`OAUTH_SERVER_URL`**
-  - **Descrição**: URL do servidor OAuth para autenticação
+### 2. Supabase URL
+- **`VITE_SUPABASE_URL`**
+  - **Descrição**: URL do projeto Supabase
   - **Formato**: URL completa
-  - **Exemplo**: `https://oauth.example.com`
+  - **Exemplo**: `https://xxxxxxxxxxxxx.supabase.co`
   - **Ambiente**: Production, Preview, Development
+  - **Obtenção**: Supabase Dashboard → Settings → API → Project URL
 
-- **`OWNER_OPEN_ID`**
-  - **Descrição**: ID do proprietário/administrador do sistema
-  - **Formato**: String identificadora única
+### 3. Supabase Anon Key
+- **`VITE_SUPABASE_ANON_KEY`**
+  - **Descrição**: Chave pública (anon) do Supabase para autenticação
+  - **Formato**: String JWT
+  - **Exemplo**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
   - **Ambiente**: Production, Preview, Development
+  - **Obtenção**: Supabase Dashboard → Settings → API → Project API keys → anon public
 
-### 4. Vite App ID
-- **`VITE_APP_ID`**
-  - **Descrição**: Identificador da aplicação Vite
-  - **Formato**: String identificadora
+### 4. JWT Secret (para cookies)
+- **`JWT_SECRET`**
+  - **Descrição**: Chave secreta para assinatura de cookies de sessão
+  - **Formato**: String aleatória segura (mínimo 32 caracteres)
+  - **Exemplo**: `sua-chave-secreta-muito-segura-aqui-min-32-chars`
   - **Ambiente**: Production, Preview, Development
+  - **Geração**: Use `openssl rand -base64 32` ou gerador online
 
 ---
 
@@ -67,7 +67,7 @@ Este documento lista todas as variáveis de ambiente necessárias para configura
 
 ## 📧 Serviço de Email
 
-### 7. Resend API Key (Opção 1)
+### 7. Resend API Key (Opção 1 - Recomendado)
 - **`RESEND_API_KEY`**
   - **Descrição**: Chave de API do Resend para envio de emails
   - **Formato**: String da chave de API
@@ -194,11 +194,10 @@ Este documento lista todas as variáveis de ambiente necessárias para configura
 
 ## ✅ Checklist de Configuração
 
-- [ ] `DATABASE_URL` - **OBRIGATÓRIO**
-- [ ] `JWT_SECRET` - **OBRIGATÓRIO**
-- [ ] `OAUTH_SERVER_URL` - **OBRIGATÓRIO**
-- [ ] `OWNER_OPEN_ID` - **OBRIGATÓRIO**
-- [ ] `VITE_APP_ID` - **OBRIGATÓRIO**
+- [ ] `DATABASE_URL` - **OBRIGATÓRIO** (PostgreSQL do Supabase)
+- [ ] `VITE_SUPABASE_URL` - **OBRIGATÓRIO**
+- [ ] `VITE_SUPABASE_ANON_KEY` - **OBRIGATÓRIO**
+- [ ] `JWT_SECRET` - **OBRIGATÓRIO** (para cookies de sessão)
 - [ ] `PAGARME_API_KEY` - **OBRIGATÓRIO**
 - [ ] `PAGARME_API_URL` - Recomendado
 - [ ] `RESEND_API_KEY` ou `SENDGRID_API_KEY` - **OBRIGATÓRIO** (escolha um)
@@ -217,14 +216,16 @@ Este documento lista todas as variáveis de ambiente necessárias para configura
 
 1. **Segurança**: Nunca compartilhe suas chaves de API publicamente ou em repositórios Git
 2. **Ambientes**: Configure valores diferentes para Production e Preview quando necessário (ex: sandbox vs produção)
-3. **Teste**: Após configurar, teste todas as funcionalidades (pagamento, email, frete)
+3. **Teste**: Após configurar, teste todas as funcionalidades (autenticação, pagamento, email, frete)
 4. **Backup**: Mantenha um backup seguro de todas as suas chaves de API
+5. **Supabase**: Certifique-se de que as políticas RLS (Row Level Security) estão configuradas corretamente no Supabase
 
 ---
 
 ## 🆘 Suporte
 
 Se tiver dúvidas sobre como obter alguma dessas chaves:
+- **Supabase**: https://supabase.com/docs
 - **Pagar.me**: https://docs.pagar.me
 - **Resend**: https://resend.com/docs
 - **SendGrid**: https://docs.sendgrid.com
@@ -232,4 +233,4 @@ Se tiver dúvidas sobre como obter alguma dessas chaves:
 
 ---
 
-**Última atualização**: 28 de novembro de 2024
+**Última atualização**: 02 de dezembro de 2024

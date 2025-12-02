@@ -96,7 +96,7 @@ export default function CoursePlayer() {
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
   const getLessonProgress = (lessonId: number) => {
-    return fullCourse?.progress?.find((p) => p.lesson.id === lessonId)?.progress;
+    return fullCourse && 'progress' in fullCourse ? fullCourse.progress?.find((p: any) => p.lesson.id === lessonId)?.progress : undefined;
   };
 
   const handleLessonComplete = async () => {

@@ -29,6 +29,10 @@ export default function CreatorProfile() {
   const [, params] = useRoute("/comunidade/criadora/:id");
   const creatorId = params?.id ? parseInt(params.id) : 0;
 
+  const { data: myProfile } = trpc.social.creator.myProfile.useQuery(undefined, {
+    enabled: !!user,
+  });
+
   const { data: creator, isLoading: loadingCreator } = trpc.social.creator.getById.useQuery(
     { id: creatorId },
     { enabled: creatorId > 0 }
@@ -134,7 +138,7 @@ export default function CreatorProfile() {
                   <p className="text-muted-foreground">{creator.user?.name}</p>
                 </div>
 
-                {user && profile?.userId !== user.id && (
+                {user && myProfile && profile?.userId !== myProfile.userId && (
                   <Button
                     variant={isFollowing ? "outline" : "default"}
                     onClick={handleFollowToggle}
