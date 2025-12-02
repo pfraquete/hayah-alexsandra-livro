@@ -743,7 +743,27 @@ export const digitalProductsRouter = router({
 
   // Get user's purchases
   myPurchases: protectedProcedure.query(async ({ ctx }) => {
-    return await getUserDigitalPurchases(ctx.user.id);
+    const purchases = await getUserDigitalPurchases(ctx.user.id);
+    // Purchases já vem com product e creator do JOIN
+    return purchases.map(p => ({
+      purchase: {
+        id: p.purchase.id,
+        productId: p.purchase.productId,
+        pricePaidCents: p.purchase.pricePaidCents,
+        downloadCount: p.purchase.downloadCount,
+        lastDownloadedAt: p.purchase.lastDownloadedAt,
+        createdAt: p.purchase.createdAt,
+      },
+      product: {
+        id: p.product.id,
+        title: p.product.title,
+        slug: p.product.slug,
+        fileType: p.product.fileType,
+        fileUrl: p.product.fileUrl,
+        thumbnailUrl: p.product.thumbnailUrl,
+      },
+      creator: p.creator,
+    }));
   }),
 
   // Purchase digital product
@@ -764,10 +784,25 @@ export const digitalProductsRouter = router({
   // Download purchased product
   download: protectedProcedure
     .input(z.object({ purchaseId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const purchases = await getUserDigitalPurchases(ctx.user.id);
+      const purchaseData = purchases.find(p => p.purchase.id === input.purchaseId);
+      
+      if (!purchaseData) {
+        throw new Error('Compra não encontrada');
+      }
+      
+      if (!purchaseData.product.fileUrl) {
+        throw new Error('Arquivo não disponível');
+      }
+      
       await incrementDownloadCount(input.purchaseId);
-      // Return download URL - in production, generate signed URL
-      return { success: true };
+      
+      // Return download URL from Supabase Storage
+      return { 
+        success: true,
+        downloadUrl: purchaseData.product.fileUrl
+      };
     }),
 });
 

@@ -58,15 +58,17 @@ export default function Checkout() {
 
   const product = products?.find(p => p.id === selectedProductId) || products?.[0];
   const selectedShipping = shippingOptions.find(opt => opt.code === shippingMethod);
+  const isDigitalProduct = product?.productType === 'digital';
+  const isPhysicalProduct = product?.productType === 'physical';
 
-  // Auto-calculate shipping if we have product and CEP from localStorage
+  // Auto-calculate shipping if we have product and CEP from localStorage (only for physical products)
   useEffect(() => {
-    if (product && address.cep && address.cep.replace(/\D/g, '').length === 8 && shippingOptions.length === 0 && !isCalculating) {
+    if (isPhysicalProduct && product && address.cep && address.cep.replace(/\D/g, '').length === 8 && shippingOptions.length === 0 && !isCalculating) {
       // Optional: Auto-calculate. For now let's just let the user click or wait for them to confirm address.
       // Actually, let's trigger it if we have the CEP to make it smoother.
       handleCalculateShipping();
     }
-  }, [product, address.cep]);
+  }, [product, address.cep, isPhysicalProduct]);
 
   if (!isAuthenticated) {
     return (
@@ -205,14 +207,17 @@ export default function Checkout() {
                   </div>
                 </div>
                 {step === 1 && (
-                  <Button onClick={() => setStep(2)} className="w-full mt-6 shadow-soft hover:shadow-soft-lg">
+                  <Button 
+                    onClick={() => setStep(isDigitalProduct ? 3 : 2)} 
+                    className="w-full mt-6 shadow-soft hover:shadow-soft-lg"
+                  >
                     Continuar
                   </Button>
                 )}
               </div>
 
-              {/* Etapa 2: Endereço */}
-              {step >= 2 && (
+              {/* Etapa 2: Endereço (apenas produtos físicos) */}
+              {step >= 2 && isPhysicalProduct && (
                 <div className={`glass-card p-6 rounded-2xl transition-all duration-300 animate-fade-in-up ${step >= 2 ? 'opacity-100' : 'opacity-50'}`}>
                   <div className="flex items-center gap-4 mb-6">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${step >= 2 ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-muted text-muted-foreground'}`}>
@@ -353,7 +358,7 @@ export default function Checkout() {
                 <div className="glass-card p-6 rounded-2xl animate-fade-in-up">
                   <div className="flex items-center gap-4 mb-6">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary text-white shadow-lg shadow-primary/30 font-bold text-lg">
-                      3
+                      {isDigitalProduct ? '2' : '3'}
                     </div>
                     <h2 className="text-xl font-semibold">Pagamento</h2>
                   </div>
@@ -407,10 +412,16 @@ export default function Checkout() {
                     <span>Subtotal ({quantity}x)</span>
                     <span>R$ {(subtotal / 100).toFixed(2)}</span>
                   </div>
-                  {selectedShipping && (
+                  {isPhysicalProduct && selectedShipping && (
                     <div className="flex justify-between text-muted-foreground">
                       <span>Frete ({selectedShipping.name})</span>
                       <span>R$ {(shipping / 100).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {isDigitalProduct && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Frete</span>
+                      <span className="text-green-600 font-medium">Grátis (Digital)</span>
                     </div>
                   )}
                   <Separator className="bg-primary/10" />

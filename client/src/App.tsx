@@ -33,6 +33,7 @@ import CoursePlayer from "./pages/CoursePlayer";
 // Creator Pages
 import NovoPost from "./pages/criadora/NovoPost";
 import MeusProdutos from "./pages/criadora/MeusProdutos";
+import MeusProdutosDigitais from "./pages/MeusProdutosDigitais";
 
 function Router() {
   return (
@@ -163,6 +164,11 @@ function Router() {
           <DashboardLayout>
             <MyCourses />
           </DashboardLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/meus-produtos-digitais"}>
+        <ProtectedRoute>
+          <MeusProdutosDigitais />
         </ProtectedRoute>
       </Route>
 
