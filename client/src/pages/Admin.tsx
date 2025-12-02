@@ -269,7 +269,7 @@ export default function Admin() {
   const totalRevenue = orders?.reduce((sum, o) => o.status !== 'CANCELADO' && o.status !== 'REEMBOLSADO' ? sum + o.totalCents : sum, 0) || 0;
   const paidOrders = orders?.filter(o => o.status !== 'AGUARDANDO_PAGAMENTO' && o.status !== 'CANCELADO').length || 0;
   const pendingOrders = orders?.filter(o => o.status === 'AGUARDANDO_PAGAMENTO').length || 0;
-  const totalStock = products?.reduce((sum, p) => sum + p.stockQuantity, 0) || 0;
+  const totalStock = products?.reduce((sum, p) => sum + (p.stockQuantity ?? 0), 0) || 0;
 
   return (
     <div className="min-h-screen relative overflow-hidden py-8">
@@ -551,8 +551,8 @@ export default function Admin() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                <Badge variant={product.stockQuantity > 10 ? 'default' : product.stockQuantity > 0 ? 'secondary' : 'destructive'}>
-                                  {product.stockQuantity} un.
+                                <Badge variant={(product.stockQuantity ?? 0) > 10 ? 'default' : (product.stockQuantity ?? 0) > 0 ? 'secondary' : 'destructive'}>
+                                  {product.stockQuantity ?? 0} un.
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -576,9 +576,9 @@ export default function Admin() {
                                       setStockModal({
                                         open: true,
                                         productId: product.id,
-                                        currentStock: product.stockQuantity,
+                                        currentStock: product.stockQuantity ?? 0,
                                       });
-                                      setNewStock(product.stockQuantity);
+                                      setNewStock(product.stockQuantity ?? 0);
                                     }}
                                   >
                                     Estoque

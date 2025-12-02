@@ -39,6 +39,169 @@ export const productsRouter = router({
     .query(async ({ input }) => {
       return await getProductBySlug(input.slug);
     }),
+
+  // Creator endpoints
+  myProducts: protectedProcedure.query(async ({ ctx }) => {
+    const { getDb } = await import("./db");
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const { products } = await import("../drizzle/schema");
+    const { eq, desc } = await import("drizzle-orm");
+    
+    return await db.select().from(products)
+      .where(eq(products.creatorId, ctx.user.id))
+      .orderBy(desc(products.createdAt));
+  }),
+
+  create: protectedProcedure
+    .input(z.object({
+      productType: z.enum(["physical", "digital"]),
+      name: z.string().min(1).max(255),
+      description: z.string().optional(),
+      priceCents: z.number().min(0),
+      compareAtPriceCents: z.number().min(0).optional(),
+      imageUrl: z.string().optional(),
+      // Physical fields
+      stockQuantity: z.number().min(0).optional(),
+      weightGrams: z.number().min(0).optional(),
+      widthCm: z.number().min(0).optional(),
+      heightCm: z.number().min(0).optional(),
+      depthCm: z.number().min(0).optional(),
+      // Digital fields
+      fileUrl: z.string().optional(),
+      fileType: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { getDb } = await import("./db");
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { products } = await import("../drizzle/schema");
+      
+      // Generate slug from name
+      const slug = input.name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .substring(0, 200);
+      
+      const [product] = await db.insert(products).values({
+        creatorId: ctx.user.id,
+        slug,
+        ...input,
+        widthCm: input.widthCm?.toString(),
+        heightCm: input.heightCm?.toString(),
+        depthCm: input.depthCm?.toString(),
+      }).returning();
+      
+      return product;
+    }),
+
+  update: protectedProcedure
+    .input(z.object({
+      productId: z.number(),
+      name: z.string().min(1).max(255).optional(),
+      description: z.string().optional(),
+      priceCents: z.number().min(0).optional(),
+      compareAtPriceCents: z.number().min(0).optional(),
+      imageUrl: z.string().optional(),
+      // Physical fields
+      stockQuantity: z.number().min(0).optional(),
+      weightGrams: z.number().min(0).optional(),
+      widthCm: z.number().min(0).optional(),
+      heightCm: z.number().min(0).optional(),
+      depthCm: z.number().min(0).optional(),
+      // Digital fields
+      fileUrl: z.string().optional(),
+      fileType: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { getDb } = await import("./db");
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { products } = await import("../drizzle/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      const { productId, ...updates } = input;
+      
+      // Verify ownership
+      const [product] = await db.select().from(products)
+        .where(and(
+          eq(products.id, productId),
+          eq(products.creatorId, ctx.user.id)
+        ));
+      
+      if (!product) {
+        throw new Error("Produto não encontrado ou você não tem permissão");
+      }
+      
+      const [updated] = await db.update(products)
+        .set({ 
+          ...updates, 
+          widthCm: updates.widthCm?.toString(),
+          heightCm: updates.heightCm?.toString(),
+          depthCm: updates.depthCm?.toString(),
+          updatedAt: new Date() 
+        })
+        .where(eq(products.id, productId))
+        .returning();
+      
+      return updated;
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ productId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const { getDb } = await import("./db");
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { products } = await import("../drizzle/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      // Verify ownership
+      const [product] = await db.select().from(products)
+        .where(and(
+          eq(products.id, input.productId),
+          eq(products.creatorId, ctx.user.id)
+        ));
+      
+      if (!product) {
+        throw new Error("Produto não encontrado ou você não tem permissão");
+      }
+      
+      await db.delete(products).where(eq(products.id, input.productId));
+      
+      return { success: true };
+    }),
+
+  toggleActive: protectedProcedure
+    .input(z.object({ productId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const { getDb } = await import("./db");
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { products } = await import("../drizzle/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
+      // Verify ownership
+      const [product] = await db.select().from(products)
+        .where(and(
+          eq(products.id, input.productId),
+          eq(products.creatorId, ctx.user.id)
+        ));
+      
+      if (!product) {
+        throw new Error("Produto não encontrado ou você não tem permissão");
+      }
+      
+      const [updated] = await db.update(products)
+        .set({ active: !product.active, updatedAt: new Date() })
+        .where(eq(products.id, input.productId))
+        .returning();
+      
+      return updated;
+    }),
 });
 
 export const checkoutRouter = router({
@@ -52,6 +215,14 @@ export const checkoutRouter = router({
       const product = await getProductById(input.productId);
       if (!product) {
         throw new Error('Produto não encontrado');
+      }
+      
+      // Digital products don't need shipping
+      if (product.productType === 'digital') {
+        return {
+          options: [],
+          message: 'Produto digital não requer frete'
+        };
       }
 
       // Fallback shipping options when Melhor Envio is not configured
@@ -92,7 +263,7 @@ export const checkoutRouter = router({
             width: Number(product.widthCm),
             height: Number(product.heightCm),
             length: Number(product.depthCm),
-            weight: product.weightGrams / 1000, // Convert to kg
+            weight: (product.weightGrams ?? 300) / 1000, // Convert to kg
             insurance_value: product.priceCents / 100, // Convert to BRL
             quantity: input.quantity,
           }],

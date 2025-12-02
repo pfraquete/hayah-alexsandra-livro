@@ -15,6 +15,7 @@ import DetalhesPedido from "./pages/DetalhesPedido";
 import Admin from "./pages/Admin";
 import CourseManager from "./pages/admin/CourseManager";
 import Produto from "./pages/Produto";
+import Loja from "./pages/Loja";
 import Dashboard from "./pages/Dashboard";
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -38,7 +39,9 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path={"/"} component={Home} />
+      <Route path={"/loja"} component={Loja} />
       <Route path={"/produto"} component={Produto} />
+      <Route path={"/produto/:slug"} component={Produto} />
       <Route path={"/404"} component={NotFound} />
 
       {/* Auth routes - redirect to dashboard if already logged in */}

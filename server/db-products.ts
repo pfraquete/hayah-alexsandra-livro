@@ -210,12 +210,14 @@ export async function decrementProductStock(productId: number, quantity: number)
   const product = await getProductById(productId);
   if (!product) throw new Error("Product not found");
 
-  if (product.stockQuantity < quantity) {
+  const currentStock = product.stockQuantity ?? 0;
+  
+  if (currentStock < quantity) {
     throw new Error("Insufficient stock");
   }
 
   await db
     .update(products)
-    .set({ stockQuantity: product.stockQuantity - quantity })
+    .set({ stockQuantity: currentStock - quantity })
     .where(eq(products.id, productId));
 }

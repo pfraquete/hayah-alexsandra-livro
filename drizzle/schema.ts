@@ -2,6 +2,8 @@ import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, j
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 
+export const productTypeEnum = pgEnum("product_type", ["physical", "digital"]);
+
 export const orderStatusEnum = pgEnum("order_status", [
   "AGUARDANDO_PAGAMENTO",
   "PAGO",
@@ -66,16 +68,26 @@ export type InsertUser = typeof users.$inferInsert;
  */
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
+  creatorId: integer("creatorId"),
+  productType: productTypeEnum("productType").default("physical").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   description: text("description"),
   priceCents: integer("priceCents").notNull(),
   compareAtPriceCents: integer("compareAtPriceCents"),
-  stockQuantity: integer("stockQuantity").default(0).notNull(),
-  weightGrams: integer("weightGrams").default(300).notNull(),
-  widthCm: decimal("widthCm", { precision: 5, scale: 2 }).default("14").notNull(),
-  heightCm: decimal("heightCm", { precision: 5, scale: 2 }).default("21").notNull(),
-  depthCm: decimal("depthCm", { precision: 5, scale: 2 }).default("2").notNull(),
+  
+  // Physical product fields (optional for digital products)
+  stockQuantity: integer("stockQuantity").default(0),
+  weightGrams: integer("weightGrams"),
+  widthCm: decimal("widthCm", { precision: 5, scale: 2 }),
+  heightCm: decimal("heightCm", { precision: 5, scale: 2 }),
+  depthCm: decimal("depthCm", { precision: 5, scale: 2 }),
+  
+  // Digital product fields (optional for physical products)
+  fileUrl: varchar("fileUrl", { length: 500 }),
+  fileType: varchar("fileType", { length: 50 }),
+  fileSizeBytes: integer("fileSizeBytes"),
+  
   imageUrl: varchar("imageUrl", { length: 500 }),
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
