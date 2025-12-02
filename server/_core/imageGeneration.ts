@@ -80,7 +80,7 @@ export async function generateImage(
   const base64Data = result.image.b64Json;
   const buffer = Buffer.from(base64Data, "base64");
 
-  // Save to S3
+  // Save to Supabase Storage
   const { url } = await storagePut(
     `generated/${Date.now()}.png`,
     buffer,

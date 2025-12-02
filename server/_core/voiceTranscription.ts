@@ -3,7 +3,7 @@
  *
  * Frontend implementation guide:
  * 1. Capture audio using MediaRecorder API
- * 2. Upload audio to storage (e.g., S3) to get URL
+ * 2. Upload audio to storage (Supabase Storage) to get URL
  * 3. Call transcription with the URL
  * 
  * Example usage:
@@ -28,7 +28,7 @@
 import { ENV } from "./env";
 
 export type TranscribeOptions = {
-  audioUrl: string; // URL to the audio file (e.g., S3 URL)
+  audioUrl: string; // URL to the audio file (Supabase Storage URL)
   language?: string; // Optional: specify language code (e.g., "en", "es", "zh")
   prompt?: string; // Optional: custom prompt for the transcription
 };

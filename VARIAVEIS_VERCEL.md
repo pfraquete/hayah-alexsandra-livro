@@ -135,27 +135,9 @@ Este documento lista todas as variáveis de ambiente necessárias para configura
 
 ---
 
-## 🏗️ Forge API (Opcional)
-
-### 15. Built-in Forge API URL
-- **`BUILT_IN_FORGE_API_URL`**
-  - **Descrição**: URL da API Forge interna
-  - **Formato**: URL completa
-  - **Ambiente**: Production, Preview, Development
-  - **Nota**: Opcional, usado para funcionalidades específicas
-
-### 16. Built-in Forge API Key
-- **`BUILT_IN_FORGE_API_KEY`**
-  - **Descrição**: Chave de API do Forge
-  - **Formato**: String da chave de API
-  - **Ambiente**: Production, Preview, Development
-  - **Nota**: Opcional, usado para funcionalidades específicas
-
----
-
 ## 🌍 Ambiente
 
-### 17. Node Environment
+### 15. Node Environment
 - **`NODE_ENV`**
   - **Descrição**: Ambiente de execução do Node.js
   - **Formato**: String
@@ -207,8 +189,6 @@ Este documento lista todas as variáveis de ambiente necessárias para configura
 - [ ] `MELHOR_ENVIO_URL` - Recomendado
 - [ ] `MELHOR_ENVIO_FROM_CEP` - **OBRIGATÓRIO**
 - [ ] `MELHOR_ENVIO_EMAIL` - Recomendado
-- [ ] `BUILT_IN_FORGE_API_URL` - Opcional
-- [ ] `BUILT_IN_FORGE_API_KEY` - Opcional
 
 ---
 

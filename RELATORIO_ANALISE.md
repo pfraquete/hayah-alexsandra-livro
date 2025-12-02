@@ -32,7 +32,7 @@ O projeto utiliza uma stack moderna e robusta baseada em tecnologias de ponta pa
 
 **Cálculo de Frete**: Integração com API do Melhor Envio para cotação de frete dos Correios (PAC e SEDEX).
 
-**Armazenamento**: AWS S3 (@aws-sdk/client-s3 3.693.0) para upload de imagens e arquivos digitais.
+**Armazenamento**: Supabase Storage para upload de imagens, vídeos e arquivos digitais. Organizado em 8 buckets (avatars, covers, products, generated, courses, digital-products, posts, public).
 
 ---
 

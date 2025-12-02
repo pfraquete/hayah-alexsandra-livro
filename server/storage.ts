@@ -1,102 +1,150 @@
-// Storage helpers for file uploads
-// Uses external storage proxy (Authorization: Bearer <token>)
-
+// Storage helpers for file uploads using Supabase Storage
+import { createClient } from '@supabase/supabase-js';
 import { ENV } from './_core/env';
 
-type StorageConfig = { baseUrl: string; apiKey: string };
-
-function getStorageConfig(): StorageConfig {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-
-  if (!baseUrl || !apiKey) {
+// Initialize Supabase client for storage operations
+function getSupabaseClient() {
+  if (!ENV.supabaseUrl || !ENV.supabaseAnonKey) {
     throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
+      "Supabase credentials missing: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY"
     );
   }
-
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
+  return createClient(ENV.supabaseUrl, ENV.supabaseAnonKey);
 }
 
-function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-
-async function buildDownloadUrl(
-  baseUrl: string,
-  relKey: string,
-  apiKey: string
-): Promise<string> {
-  const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl)
-  );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
-  const response = await fetch(downloadApiUrl, {
-    method: "GET",
-    headers: buildAuthHeaders(apiKey),
-  });
-  return (await response.json()).url;
-}
-
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
-}
-
-function normalizeKey(relKey: string): string {
-  return relKey.replace(/^\/+/, "");
-}
-
-function toFormData(
-  data: Buffer | Uint8Array | string,
-  contentType: string,
-  fileName: string
-): FormData {
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-
-function buildAuthHeaders(apiKey: string): HeadersInit {
-  return { Authorization: `Bearer ${apiKey}` };
-}
-
+/**
+ * Upload a file to Supabase Storage
+ * @param relKey - Relative path/key for the file (e.g., "avatars/user-123.jpg")
+ * @param data - File data as Buffer, Uint8Array, or string
+ * @param contentType - MIME type of the file
+ * @returns Object with key and public URL
+ */
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
+  const supabase = getSupabaseClient();
   const key = normalizeKey(relKey);
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
-    );
+  
+  // Determine bucket based on file path
+  const bucket = getBucketFromPath(key);
+  const filePath = getFilePathFromKey(key);
+  
+  // Convert data to appropriate format
+  let fileData: Blob | Buffer | Uint8Array;
+  if (typeof data === 'string') {
+    fileData = new Blob([data], { type: contentType });
+  } else {
+    fileData = data;
   }
-  const url = (await response.json()).url;
-  return { key, url };
-}
-
-export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
-  const { baseUrl, apiKey } = getStorageConfig();
-  const key = normalizeKey(relKey);
+  
+  // Upload to Supabase Storage
+  const { data: uploadData, error } = await supabase.storage
+    .from(bucket)
+    .upload(filePath, fileData, {
+      contentType,
+      upsert: true, // Overwrite if exists
+    });
+  
+  if (error) {
+    throw new Error(`Supabase Storage upload failed: ${error.message}`);
+  }
+  
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(filePath);
+  
   return {
     key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
+    url: publicUrl,
   };
+}
+
+/**
+ * Get a file's public URL from Supabase Storage
+ * @param relKey - Relative path/key for the file
+ * @returns Object with key and public URL
+ */
+export async function storageGet(
+  relKey: string
+): Promise<{ key: string; url: string }> {
+  const supabase = getSupabaseClient();
+  const key = normalizeKey(relKey);
+  
+  const bucket = getBucketFromPath(key);
+  const filePath = getFilePathFromKey(key);
+  
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(filePath);
+  
+  return {
+    key,
+    url: publicUrl,
+  };
+}
+
+/**
+ * Delete a file from Supabase Storage
+ * @param relKey - Relative path/key for the file
+ */
+export async function storageDelete(relKey: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const key = normalizeKey(relKey);
+  
+  const bucket = getBucketFromPath(key);
+  const filePath = getFilePathFromKey(key);
+  
+  const { error } = await supabase.storage
+    .from(bucket)
+    .remove([filePath]);
+  
+  if (error) {
+    throw new Error(`Supabase Storage delete failed: ${error.message}`);
+  }
+}
+
+// Helper functions
+
+function normalizeKey(relKey: string): string {
+  return relKey.replace(/^\/+/, '');
+}
+
+/**
+ * Determine which Supabase Storage bucket to use based on file path
+ * Buckets should be created in Supabase Dashboard:
+ * - avatars: User profile pictures
+ * - covers: Profile cover images
+ * - products: Product images
+ * - generated: AI-generated images
+ * - courses: Course-related files
+ * - digital-products: Downloadable digital products
+ */
+function getBucketFromPath(key: string): string {
+  if (key.startsWith('avatars/')) return 'avatars';
+  if (key.startsWith('covers/')) return 'covers';
+  if (key.startsWith('products/')) return 'products';
+  if (key.startsWith('generated/')) return 'generated';
+  if (key.startsWith('courses/')) return 'courses';
+  if (key.startsWith('digital-products/')) return 'digital-products';
+  if (key.startsWith('posts/')) return 'posts';
+  
+  // Default bucket for miscellaneous files
+  return 'public';
+}
+
+/**
+ * Extract the file path within the bucket (remove bucket prefix)
+ */
+function getFilePathFromKey(key: string): string {
+  const parts = key.split('/');
+  // If key starts with bucket name, remove it
+  const bucket = getBucketFromPath(key);
+  if (parts[0] === bucket) {
+    return parts.slice(1).join('/');
+  }
+  return key;
 }
