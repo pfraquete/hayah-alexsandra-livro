@@ -11,10 +11,5 @@
     ],
     "buildCommand": "npm run build",
     "outputDirectory": "dist/public",
-    "framework": "vite",
-    "functions": {
-        "api/index.ts": {
-            "includeFiles": "server/**"
-        }
-    }
+    "framework": "vite"
 }
