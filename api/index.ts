@@ -1,4 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import express from "express";
 import helmet from "helmet";
@@ -39,7 +38,4 @@ app.use(
     })
 );
 
-// Export handler for Vercel serverless function
-export default (req: VercelRequest, res: VercelResponse) => {
-    return app(req as any, res as any);
-};
+export default app;
