@@ -13,7 +13,7 @@
     "outputDirectory": "dist/public",
     "framework": "vite",
     "functions": {
-        "api/index.ts": {
+        "api/index.js": {
             "includeFiles": "server/**"
         }
     }
