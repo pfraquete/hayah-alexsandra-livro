@@ -1,4 +1,11 @@
-import type { CookieOptions, Request } from "express";
+import type { CookieOptions, Request as ExpressRequest } from "express";
+import type { IncomingHttpHeaders } from "http";
+
+// Extended request type that includes Express properties
+interface ExtendedRequest {
+  protocol?: string;
+  headers: IncomingHttpHeaders;
+}
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -8,7 +15,7 @@ function isIpAddress(host: string) {
   return host.includes(":");
 }
 
-function isSecureRequest(req: Request) {
+function isSecureRequest(req: ExtendedRequest) {
   if (req.protocol === "https") return true;
 
   const forwardedProto = req.headers["x-forwarded-proto"];
@@ -18,11 +25,11 @@ function isSecureRequest(req: Request) {
     ? forwardedProto
     : forwardedProto.split(",");
 
-  return protoList.some(proto => proto.trim().toLowerCase() === "https");
+  return protoList.some((proto: string) => proto.trim().toLowerCase() === "https");
 }
 
 export function getSessionCookieOptions(
-  req: Request
+  req: ExtendedRequest
 ): Partial<CookieOptions> {
   // const hostname = req.hostname;
   // const shouldSetDomain =

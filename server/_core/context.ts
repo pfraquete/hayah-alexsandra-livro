@@ -1,11 +1,12 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import type { Request, Response } from "express";
 import type { User } from "../../drizzle/schema";
 import { supabase, getSupabaseUser } from "../supabase";
 import * as db from "../db";
 
 export type TrpcContext = {
-  req: CreateExpressContextOptions["req"];
-  res: CreateExpressContextOptions["res"];
+  req: Request;
+  res: Response;
   user: User | null;
 };
 
@@ -13,10 +14,12 @@ export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
   let user: User | null = null;
+  const req = opts.req as Request;
+  const res = opts.res as Response;
 
   try {
     // Get access token from Authorization header
-    const authHeader = opts.req.headers.authorization;
+    const authHeader = req.headers.authorization;
     if (authHeader?.startsWith("Bearer ")) {
       const accessToken = authHeader.substring(7);
       const supabaseUser = await getSupabaseUser(accessToken);
@@ -47,8 +50,8 @@ export async function createContext(
   }
 
   return {
-    req: opts.req,
-    res: opts.res,
+    req,
+    res,
     user,
   };
 }
