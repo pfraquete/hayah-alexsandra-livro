@@ -15,6 +15,7 @@ export async function getDb() {
         idle_timeout: 20,      // Close idle connections after 20s
         connect_timeout: 10,   // Fail fast if connection hangs
         prepare: false,        // Disable prepared statements for compatibility with some poolers
+        ssl: 'require',
       });
       _db = drizzle(client);
     } catch (error) {
