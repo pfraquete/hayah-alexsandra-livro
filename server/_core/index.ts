@@ -7,8 +7,7 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { appRouter } from "../routers";
-import * as db from "../db";
-import { sql } from "drizzle-orm";
+import { checkConnection } from "../db";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -79,35 +78,58 @@ async function startServer() {
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
-    app.use("/api", generalLimiter);
-    // Configure body parser with larger size limit for file uploads
-    app.use(express.json({ limit: "50mb" }));
-    app.use(express.urlencoded({ limit: "50mb", extended: true }));
-    // tRPC API
-    app.use(
-      "/api/trpc",
-      createExpressMiddleware({
-        router: appRouter,
-        createContext,
-      })
-    );
-    // development mode uses Vite, production mode uses static files
-    if(process.env.NODE_ENV === "development") {
-      await setupVite(app, server);
-} else {
-  serveStatic(app);
-}
+  });
 
-const preferredPort = parseInt(process.env.PORT || "3000");
-const port = await findAvailablePort(preferredPort);
+  app.use("/api", generalLimiter);
 
-if (port !== preferredPort) {
-  console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-}
+  // Configure body parser with larger size limit for file uploads
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-server.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}/`);
-});
+  // Health check endpoint
+  app.get("/api/health", async (req, res) => {
+    try {
+      const dbConnected = await checkConnection();
+      res.json({
+        status: dbConnected ? "healthy" : "degraded",
+        database: dbConnected ? "connected" : "disconnected",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "unhealthy",
+        database: "error",
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
+  // tRPC API
+  app.use(
+    "/api/trpc",
+    createExpressMiddleware({
+      router: appRouter,
+      createContext,
+    })
+  );
+
+  // development mode uses Vite, production mode uses static files
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+
+  const preferredPort = parseInt(process.env.PORT || "3000");
+  const port = await findAvailablePort(preferredPort);
+
+  if (port !== preferredPort) {
+    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  }
+
+  server.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}/`);
+  });
 }
 
 startServer().catch(console.error);

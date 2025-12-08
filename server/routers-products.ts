@@ -17,6 +17,11 @@ import {
   deleteAddress,
   getOrderWithTracking,
   decrementProductStock,
+  getCreatorProducts,
+  createProduct,
+  updateProduct,
+  deleteCreatorProduct,
+  toggleProductActive,
 } from "./db-products";
 import { trackShipment } from "./services/tracking";
 import {
@@ -42,15 +47,7 @@ export const productsRouter = router({
 
   // Creator endpoints
   myProducts: protectedProcedure.query(async ({ ctx }) => {
-    const { getDb } = await import("./db");
-    const db = await getDb();
-    if (!db) throw new Error("Database not available");
-    const { products } = await import("../drizzle/schema");
-    const { eq, desc } = await import("drizzle-orm");
-    
-    return await db.select().from(products)
-      .where(eq(products.creatorId, ctx.user.id))
-      .orderBy(desc(products.createdAt));
+    return await getCreatorProducts(ctx.user.id);
   }),
 
   create: protectedProcedure
@@ -72,11 +69,6 @@ export const productsRouter = router({
       fileType: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const { getDb } = await import("./db");
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      const { products } = await import("../drizzle/schema");
-      
       // Generate slug from name
       const slug = input.name
         .toLowerCase()
@@ -85,17 +77,24 @@ export const productsRouter = router({
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "")
         .substring(0, 200);
-      
-      const [product] = await db.insert(products).values({
+
+      return await createProduct({
         creatorId: ctx.user.id,
         slug,
-        ...input,
+        productType: input.productType,
+        name: input.name,
+        description: input.description,
+        priceCents: input.priceCents,
+        compareAtPriceCents: input.compareAtPriceCents,
+        imageUrl: input.imageUrl,
+        stockQuantity: input.stockQuantity,
+        weightGrams: input.weightGrams,
         widthCm: input.widthCm?.toString(),
         heightCm: input.heightCm?.toString(),
         depthCm: input.depthCm?.toString(),
-      }).returning();
-      
-      return product;
+        fileUrl: input.fileUrl,
+        fileType: input.fileType,
+      });
     }),
 
   update: protectedProcedure
@@ -117,90 +116,27 @@ export const productsRouter = router({
       fileType: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const { getDb } = await import("./db");
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      const { products } = await import("../drizzle/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
       const { productId, ...updates } = input;
-      
-      // Verify ownership
-      const [product] = await db.select().from(products)
-        .where(and(
-          eq(products.id, productId),
-          eq(products.creatorId, ctx.user.id)
-        ));
-      
-      if (!product) {
-        throw new Error("Produto não encontrado ou você não tem permissão");
-      }
-      
-      const [updated] = await db.update(products)
-        .set({ 
-          ...updates, 
-          widthCm: updates.widthCm?.toString(),
-          heightCm: updates.heightCm?.toString(),
-          depthCm: updates.depthCm?.toString(),
-          updatedAt: new Date() 
-        })
-        .where(eq(products.id, productId))
-        .returning();
-      
-      return updated;
+
+      return await updateProduct(productId, ctx.user.id, {
+        ...updates,
+        widthCm: updates.widthCm?.toString(),
+        heightCm: updates.heightCm?.toString(),
+        depthCm: updates.depthCm?.toString(),
+      });
     }),
 
   delete: protectedProcedure
     .input(z.object({ productId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      const { getDb } = await import("./db");
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      const { products } = await import("../drizzle/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
-      // Verify ownership
-      const [product] = await db.select().from(products)
-        .where(and(
-          eq(products.id, input.productId),
-          eq(products.creatorId, ctx.user.id)
-        ));
-      
-      if (!product) {
-        throw new Error("Produto não encontrado ou você não tem permissão");
-      }
-      
-      await db.delete(products).where(eq(products.id, input.productId));
-      
+      await deleteCreatorProduct(input.productId, ctx.user.id);
       return { success: true };
     }),
 
   toggleActive: protectedProcedure
     .input(z.object({ productId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      const { getDb } = await import("./db");
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      const { products } = await import("../drizzle/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
-      // Verify ownership
-      const [product] = await db.select().from(products)
-        .where(and(
-          eq(products.id, input.productId),
-          eq(products.creatorId, ctx.user.id)
-        ));
-      
-      if (!product) {
-        throw new Error("Produto não encontrado ou você não tem permissão");
-      }
-      
-      const [updated] = await db.update(products)
-        .set({ active: !product.active, updatedAt: new Date() })
-        .where(eq(products.id, input.productId))
-        .returning();
-      
-      return updated;
+      return await toggleProductActive(input.productId, ctx.user.id);
     }),
 });
 
