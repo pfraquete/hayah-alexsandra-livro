@@ -1,80 +1,305 @@
-import { eq } from "drizzle-orm";
-import { getDb } from "./db";
-import { products, orders, orderItems, addresses, users, shipments, type InsertOrder, type InsertOrderItem, type InsertAddress } from "../drizzle/schema";
+import { supabaseAdmin } from "./supabase";
 
-export async function getActiveProducts() {
-  const db = await getDb();
-  if (!db) return [];
-
-  return await db.select().from(products).where(eq(products.active, true));
+// Types for products module
+export interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  priceCents: number;
+  compareAtPriceCents: number | null;
+  stockQuantity: number | null;
+  imageUrl: string | null;
+  active: boolean;
+  productType: "physical" | "digital";
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
-export async function getProductBySlug(slug: string) {
-  const db = await getDb();
-  if (!db) return null;
-
-  const result = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
-  return result.length > 0 ? result[0] : null;
+export interface Order {
+  id: number;
+  userId: number;
+  status: string;
+  totalCents: number;
+  shippingPriceCents: number;
+  addressId: number | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  customerCpf: string | null;
+  paymentMethod: string | null;
+  paymentId: string | null;
+  adminNotes: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  paidAt: Date | null;
+  shippedAt: Date | null;
+  deliveredAt: Date | null;
+  cancelledAt: Date | null;
 }
 
-export async function getProductById(id: number) {
-  const db = await getDb();
-  if (!db) return null;
-
-  const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
-  return result.length > 0 ? result[0] : null;
+export interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
+  productName: string;
+  quantity: number;
+  unitPriceCents: number;
+  createdAt: Date | null;
 }
 
-export async function createOrder(orderData: InsertOrder) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(orders).values(orderData).returning({ id: orders.id });
-  return result[0].id;
+export interface Address {
+  id: number;
+  userId: number;
+  recipientName: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement: string | null;
+  district: string;
+  city: string;
+  state: string;
+  isDefault: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
-export async function createOrderItems(items: InsertOrderItem[]) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.insert(orderItems).values(items);
+export interface Shipment {
+  id: number;
+  orderId: number;
+  shippingMethod: string;
+  shippingPriceCents: number;
+  trackingCode: string | null;
+  trackingUrl: string | null;
+  status: string;
+  estimatedDelivery: Date | null;
+  postedAt: Date | null;
+  deliveredAt: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
-export async function createAddress(addressData: InsertAddress) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const result = await db.insert(addresses).values(addressData).returning({ id: addresses.id });
-  return result[0].id;
+export interface InsertOrder {
+  userId: number;
+  status?: string;
+  totalCents: number;
+  shippingPriceCents: number;
+  addressId?: number | null;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  customerCpf?: string | null;
+  paymentMethod?: string | null;
+  paymentId?: string | null;
 }
 
-export async function getUserAddresses(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-
-  return await db.select().from(addresses).where(eq(addresses.userId, userId));
+export interface InsertOrderItem {
+  orderId: number;
+  productId: number;
+  productName: string;
+  quantity: number;
+  unitPriceCents: number;
 }
 
-export async function getUserOrders(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-
-  return await db.select().from(orders).where(eq(orders.userId, userId));
+export interface InsertAddress {
+  userId: number;
+  recipientName: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement?: string | null;
+  district: string;
+  city: string;
+  state: string;
+  isDefault?: boolean;
 }
 
-export async function getOrderById(orderId: number) {
-  const db = await getDb();
-  if (!db) return null;
+export async function getActiveProducts(): Promise<Product[]> {
+  if (!supabaseAdmin) return [];
 
-  const result = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('active', true);
+
+  if (error) {
+    console.error("[Database] Error fetching active products:", error);
+    return [];
+  }
+
+  return (data || []) as Product[];
 }
 
-export async function getOrderItems(orderId: number) {
-  const db = await getDb();
-  if (!db) return [];
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  if (!supabaseAdmin) return null;
 
-  return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('slug', slug)
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code !== 'PGRST116') {
+      console.error("[Database] Error fetching product by slug:", error);
+    }
+    return null;
+  }
+
+  return data as Product;
+}
+
+export async function getProductById(id: number): Promise<Product | null> {
+  if (!supabaseAdmin) return null;
+
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code !== 'PGRST116') {
+      console.error("[Database] Error fetching product by id:", error);
+    }
+    return null;
+  }
+
+  return data as Product;
+}
+
+export async function createOrder(orderData: InsertOrder): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .insert({
+      ...orderData,
+      status: orderData.status || 'AGUARDANDO_PAGAMENTO',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating order:", error);
+    throw error;
+  }
+
+  return data.id;
+}
+
+export async function createOrderItems(items: InsertOrderItem[]): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  if (items.length === 0) return;
+
+  const itemsWithTimestamp = items.map(item => ({
+    ...item,
+    createdAt: new Date().toISOString(),
+  }));
+
+  const { error } = await supabaseAdmin
+    .from('orderItems')
+    .insert(itemsWithTimestamp);
+
+  if (error) {
+    console.error("[Database] Error creating order items:", error);
+    throw error;
+  }
+}
+
+export async function createAddress(addressData: InsertAddress): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+
+  const { data, error } = await supabaseAdmin
+    .from('addresses')
+    .insert({
+      ...addressData,
+      isDefault: addressData.isDefault ?? false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating address:", error);
+    throw error;
+  }
+
+  return data.id;
+}
+
+export async function getUserAddresses(userId: number): Promise<Address[]> {
+  if (!supabaseAdmin) return [];
+
+  const { data, error } = await supabaseAdmin
+    .from('addresses')
+    .select('*')
+    .eq('userId', userId);
+
+  if (error) {
+    console.error("[Database] Error fetching user addresses:", error);
+    return [];
+  }
+
+  return (data || []) as Address[];
+}
+
+export async function getUserOrders(userId: number): Promise<Order[]> {
+  if (!supabaseAdmin) return [];
+
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .select('*')
+    .eq('userId', userId)
+    .order('createdAt', { ascending: false });
+
+  if (error) {
+    console.error("[Database] Error fetching user orders:", error);
+    return [];
+  }
+
+  return (data || []) as Order[];
+}
+
+export async function getOrderById(orderId: number): Promise<Order | null> {
+  if (!supabaseAdmin) return null;
+
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .select('*')
+    .eq('id', orderId)
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code !== 'PGRST116') {
+      console.error("[Database] Error fetching order:", error);
+    }
+    return null;
+  }
+
+  return data as Order;
+}
+
+export async function getOrderItems(orderId: number): Promise<OrderItem[]> {
+  if (!supabaseAdmin) return [];
+
+  const { data, error } = await supabaseAdmin
+    .from('orderItems')
+    .select('*')
+    .eq('orderId', orderId);
+
+  if (error) {
+    console.error("[Database] Error fetching order items:", error);
+    return [];
+  }
+
+  return (data || []) as OrderItem[];
 }
 
 // ============================================================
@@ -89,19 +314,41 @@ export async function updateUserProfile(
     phone?: string;
     cpf?: string;
   }
-) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  await db.update(users).set(data).where(eq(users.id, userId));
+  const { error } = await supabaseAdmin
+    .from('users')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', userId);
+
+  if (error) {
+    console.error("[Database] Error updating user profile:", error);
+    throw error;
+  }
 }
 
 export async function getUserById(userId: number) {
-  const db = await getDb();
-  if (!db) return null;
+  if (!supabaseAdmin) return null;
 
-  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code !== 'PGRST116') {
+      console.error("[Database] Error fetching user:", error);
+    }
+    return null;
+  }
+
+  return data;
 }
 
 // ============================================================
@@ -122,48 +369,65 @@ export async function updateAddress(
     state?: string;
     isDefault?: boolean;
   }
-) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
   // Verify address belongs to user
-  const existing = await db
-    .select()
-    .from(addresses)
-    .where(eq(addresses.id, addressId))
-    .limit(1);
+  const { data: existing, error: fetchError } = await supabaseAdmin
+    .from('addresses')
+    .select('*')
+    .eq('id', addressId)
+    .single();
 
-  if (existing.length === 0 || existing[0].userId !== userId) {
+  if (fetchError || !existing || existing.userId !== userId) {
     throw new Error("Address not found");
   }
 
   // If setting as default, unset other defaults
   if (data.isDefault) {
-    await db
-      .update(addresses)
-      .set({ isDefault: false })
-      .where(eq(addresses.userId, userId));
+    await supabaseAdmin
+      .from('addresses')
+      .update({ isDefault: false, updatedAt: new Date().toISOString() })
+      .eq('userId', userId);
   }
 
-  await db.update(addresses).set(data).where(eq(addresses.id, addressId));
+  const { error } = await supabaseAdmin
+    .from('addresses')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', addressId);
+
+  if (error) {
+    console.error("[Database] Error updating address:", error);
+    throw error;
+  }
 }
 
-export async function deleteAddress(addressId: number, userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function deleteAddress(addressId: number, userId: number): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
   // Verify address belongs to user
-  const existing = await db
-    .select()
-    .from(addresses)
-    .where(eq(addresses.id, addressId))
-    .limit(1);
+  const { data: existing, error: fetchError } = await supabaseAdmin
+    .from('addresses')
+    .select('*')
+    .eq('id', addressId)
+    .single();
 
-  if (existing.length === 0 || existing[0].userId !== userId) {
+  if (fetchError || !existing || existing.userId !== userId) {
     throw new Error("Address not found");
   }
 
-  await db.delete(addresses).where(eq(addresses.id, addressId));
+  const { error } = await supabaseAdmin
+    .from('addresses')
+    .delete()
+    .eq('id', addressId);
+
+  if (error) {
+    console.error("[Database] Error deleting address:", error);
+    throw error;
+  }
 }
 
 // ============================================================
@@ -171,53 +435,219 @@ export async function deleteAddress(addressId: number, userId: number) {
 // ============================================================
 
 export async function getOrderWithTracking(orderId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return null;
+  if (!supabaseAdmin) return null;
 
-  const orderResult = await db
-    .select()
-    .from(orders)
-    .where(eq(orders.id, orderId))
-    .limit(1);
+  // Get order
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from('orders')
+    .select('*')
+    .eq('id', orderId)
+    .single();
 
-  if (orderResult.length === 0 || orderResult[0].userId !== userId) {
+  if (orderError || !order || order.userId !== userId) {
     return null;
   }
 
-  const order = orderResult[0];
-  const items = await db
-    .select()
-    .from(orderItems)
-    .where(eq(orderItems.orderId, orderId));
+  // Get order items
+  const { data: items } = await supabaseAdmin
+    .from('orderItems')
+    .select('*')
+    .eq('orderId', orderId);
 
-  const shipmentResult = await db
-    .select()
-    .from(shipments)
-    .where(eq(shipments.orderId, orderId))
-    .limit(1);
+  // Get shipment
+  const { data: shipment } = await supabaseAdmin
+    .from('shipments')
+    .select('*')
+    .eq('orderId', orderId)
+    .limit(1)
+    .single();
 
   return {
     ...order,
-    items,
-    shipment: shipmentResult.length > 0 ? shipmentResult[0] : null,
+    items: items || [],
+    shipment: shipment || null,
   };
 }
 
-export async function decrementProductStock(productId: number, quantity: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function decrementProductStock(productId: number, quantity: number): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
   const product = await getProductById(productId);
   if (!product) throw new Error("Product not found");
 
   const currentStock = product.stockQuantity ?? 0;
-  
+
   if (currentStock < quantity) {
     throw new Error("Insufficient stock");
   }
 
-  await db
-    .update(products)
-    .set({ stockQuantity: currentStock - quantity })
-    .where(eq(products.id, productId));
+  const { error } = await supabaseAdmin
+    .from('products')
+    .update({
+      stockQuantity: currentStock - quantity,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', productId);
+
+  if (error) {
+    console.error("[Database] Error decrementing stock:", error);
+    throw error;
+  }
+}
+
+// ============================================================
+// Creator Product Management
+// ============================================================
+
+export async function getCreatorProducts(creatorId: number): Promise<Product[]> {
+  if (!supabaseAdmin) return [];
+
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('creatorId', creatorId)
+    .order('createdAt', { ascending: false });
+
+  if (error) {
+    console.error("[Database] Error fetching creator products:", error);
+    return [];
+  }
+
+  return (data || []) as Product[];
+}
+
+export interface InsertProduct {
+  creatorId: number;
+  productType: "physical" | "digital";
+  name: string;
+  slug: string;
+  description?: string | null;
+  priceCents: number;
+  compareAtPriceCents?: number | null;
+  imageUrl?: string | null;
+  stockQuantity?: number | null;
+  weightGrams?: number | null;
+  widthCm?: string | null;
+  heightCm?: string | null;
+  depthCm?: string | null;
+  fileUrl?: string | null;
+  fileType?: string | null;
+}
+
+export async function createProduct(data: InsertProduct): Promise<Product> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+
+  const { data: result, error } = await supabaseAdmin
+    .from('products')
+    .insert({
+      ...data,
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating product:", error);
+    throw error;
+  }
+
+  return result as Product;
+}
+
+export async function updateProduct(
+  productId: number,
+  creatorId: number,
+  data: Partial<Omit<InsertProduct, 'creatorId' | 'slug'>>
+): Promise<Product> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+
+  // Verify ownership
+  const { data: existing, error: fetchError } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('id', productId)
+    .eq('creatorId', creatorId)
+    .single();
+
+  if (fetchError || !existing) {
+    throw new Error("Produto não encontrado ou você não tem permissão");
+  }
+
+  const { data: result, error } = await supabaseAdmin
+    .from('products')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', productId)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error updating product:", error);
+    throw error;
+  }
+
+  return result as Product;
+}
+
+export async function deleteCreatorProduct(productId: number, creatorId: number): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+
+  // Verify ownership
+  const { data: existing, error: fetchError } = await supabaseAdmin
+    .from('products')
+    .select('id')
+    .eq('id', productId)
+    .eq('creatorId', creatorId)
+    .single();
+
+  if (fetchError || !existing) {
+    throw new Error("Produto não encontrado ou você não tem permissão");
+  }
+
+  const { error } = await supabaseAdmin
+    .from('products')
+    .delete()
+    .eq('id', productId);
+
+  if (error) {
+    console.error("[Database] Error deleting product:", error);
+    throw error;
+  }
+}
+
+export async function toggleProductActive(productId: number, creatorId: number): Promise<Product> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+
+  // Verify ownership and get current state
+  const { data: existing, error: fetchError } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('id', productId)
+    .eq('creatorId', creatorId)
+    .single();
+
+  if (fetchError || !existing) {
+    throw new Error("Produto não encontrado ou você não tem permissão");
+  }
+
+  const { data: result, error } = await supabaseAdmin
+    .from('products')
+    .update({
+      active: !existing.active,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', productId)
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error toggling product active:", error);
+    throw error;
+  }
+
+  return result as Product;
 }

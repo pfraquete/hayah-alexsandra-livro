@@ -1,260 +1,489 @@
-import { eq, desc, and, sql, inArray } from "drizzle-orm";
-import { getDb } from "./db";
-import {
-  creatorProfiles,
-  followers,
-  posts,
-  postMedia,
-  postLikes,
-  postComments,
-  commentLikes,
-  notifications,
-  users,
-  type InsertCreatorProfile,
-  type InsertPost,
-  type InsertPostMedia,
-  type InsertPostComment,
-  type InsertNotification,
-} from "../drizzle/schema";
+import { supabaseAdmin } from "./supabase";
+
+// Types for social module
+export interface CreatorProfile {
+  id: number;
+  userId: number;
+  displayName: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  coverUrl: string | null;
+  website: string | null;
+  socialLinks: Record<string, string> | null;
+  status: "pending" | "approved" | "rejected" | "suspended";
+  followersCount: number;
+  postsCount: number;
+  coursesCount: number;
+  isVerified: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface Post {
+  id: number;
+  creatorId: number;
+  content: string;
+  visibility: "public" | "followers" | "private";
+  likesCount: number;
+  commentsCount: number;
+  sharesCount: number;
+  isPinned: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface PostMedia {
+  id: number;
+  postId: number;
+  mediaType: "image" | "video";
+  mediaUrl: string;
+  thumbnailUrl: string | null;
+  orderIndex: number;
+  createdAt: Date | null;
+}
+
+export interface PostComment {
+  id: number;
+  postId: number;
+  userId: number;
+  parentId: number | null;
+  content: string;
+  likesCount: number;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface Notification {
+  id: number;
+  userId: number;
+  type: string;
+  title: string;
+  message: string;
+  link: string | null;
+  isRead: boolean;
+  createdAt: Date | null;
+}
+
+export interface InsertCreatorProfile {
+  userId: number;
+  displayName: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  coverUrl?: string | null;
+  website?: string | null;
+  socialLinks?: Record<string, string> | null;
+  status?: "pending" | "approved" | "rejected" | "suspended";
+}
+
+export interface InsertPost {
+  creatorId: number;
+  content: string;
+  visibility?: "public" | "followers" | "private";
+  isPinned?: boolean;
+}
+
+export interface InsertPostMedia {
+  postId: number;
+  mediaType: "image" | "video";
+  mediaUrl: string;
+  thumbnailUrl?: string | null;
+  orderIndex: number;
+}
+
+export interface InsertPostComment {
+  postId: number;
+  userId: number;
+  parentId?: number | null;
+  content: string;
+}
+
+export interface InsertNotification {
+  userId: number;
+  type: string;
+  title: string;
+  message: string;
+  link?: string | null;
+}
 
 // ============================================
 // CREATOR PROFILE FUNCTIONS
 // ============================================
 
 export async function getCreatorProfileByUserId(userId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db
-    .select()
-    .from(creatorProfiles)
-    .where(eq(creatorProfiles.userId, userId))
-    .limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+
+  const { data, error } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('*')
+    .eq('userId', userId)
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code !== 'PGRST116') {
+      console.error("[Database] Error fetching creator profile:", error);
+    }
+    return null;
+  }
+
+  return data as CreatorProfile;
 }
 
 export async function getCreatorProfileById(id: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db
-    .select({
-      profile: creatorProfiles,
-      user: {
-        id: users.id,
-        name: users.name,
-        email: users.email,
-      },
-    })
-    .from(creatorProfiles)
-    .leftJoin(users, eq(creatorProfiles.userId, users.id))
-    .where(eq(creatorProfiles.id, id))
-    .limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (profileError || !profile) return null;
+
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('id, name, email')
+    .eq('id', profile.userId)
+    .single();
+
+  return {
+    profile,
+    user: user || { id: profile.userId, name: null, email: null },
+  };
 }
 
-export async function createCreatorProfile(data: InsertCreatorProfile) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(creatorProfiles).values(data).returning({ id: creatorProfiles.id });
-  return result[0].id;
+export async function createCreatorProfile(data: InsertCreatorProfile): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+
+  const { data: result, error } = await supabaseAdmin
+    .from('creatorProfiles')
+    .insert({
+      ...data,
+      status: data.status || 'pending',
+      followersCount: 0,
+      postsCount: 0,
+      coursesCount: 0,
+      isVerified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating creator profile:", error);
+    throw error;
+  }
+
+  return result.id;
 }
 
 export async function updateCreatorProfile(
   userId: number,
   data: Partial<InsertCreatorProfile>
-) {
-  const db = await getDb();
-  if (!db) return;
-  await db
-    .update(creatorProfiles)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(creatorProfiles.userId, userId));
+): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error } = await supabaseAdmin
+    .from('creatorProfiles')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('userId', userId);
+
+  if (error) {
+    console.error("[Database] Error updating creator profile:", error);
+  }
 }
 
 export async function getApprovedCreators(limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db
-    .select({
-      profile: creatorProfiles,
-      user: {
-        id: users.id,
-        name: users.name,
-      },
-    })
-    .from(creatorProfiles)
-    .leftJoin(users, eq(creatorProfiles.userId, users.id))
-    .where(eq(creatorProfiles.status, "approved"))
-    .orderBy(desc(creatorProfiles.followersCount))
-    .limit(limit)
-    .offset(offset);
+  if (!supabaseAdmin) return [];
+
+  const { data: profiles, error } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('*')
+    .eq('status', 'approved')
+    .order('followersCount', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error || !profiles) return [];
+
+  const userIds = profiles.map(p => p.userId);
+  const { data: users } = await supabaseAdmin
+    .from('users')
+    .select('id, name')
+    .in('id', userIds);
+
+  const usersMap = new Map((users || []).map(u => [u.id, u]));
+
+  return profiles.map(profile => ({
+    profile,
+    user: usersMap.get(profile.userId) || { id: profile.userId, name: null },
+  }));
 }
 
 // ============================================
 // FOLLOWER FUNCTIONS
 // ============================================
 
-export async function followUser(followerId: number, followingId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(followers).values({ followerId, followingId });
-  await db
-    .update(creatorProfiles)
-    .set({
-      followersCount: sql`${creatorProfiles.followersCount} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(creatorProfiles.userId, followingId));
+export async function followUser(followerId: number, followingId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error: insertError } = await supabaseAdmin
+    .from('followers')
+    .insert({
+      followerId,
+      followingId,
+      createdAt: new Date().toISOString(),
+    });
+
+  if (insertError) {
+    console.error("[Database] Error following user:", insertError);
+    return;
+  }
+
+  // Increment followers count
+  const { data: profile } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('followersCount')
+    .eq('userId', followingId)
+    .single();
+
+  if (profile) {
+    await supabaseAdmin
+      .from('creatorProfiles')
+      .update({
+        followersCount: (profile.followersCount || 0) + 1,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('userId', followingId);
+  }
 }
 
-export async function unfollowUser(followerId: number, followingId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db
-    .delete(followers)
-    .where(
-      and(
-        eq(followers.followerId, followerId),
-        eq(followers.followingId, followingId)
-      )
-    );
-  await db
-    .update(creatorProfiles)
-    .set({
-      followersCount: sql`GREATEST(${creatorProfiles.followersCount} - 1, 0)`,
-      updatedAt: new Date(),
-    })
-    .where(eq(creatorProfiles.userId, followingId));
+export async function unfollowUser(followerId: number, followingId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error: deleteError } = await supabaseAdmin
+    .from('followers')
+    .delete()
+    .match({ followerId, followingId });
+
+  if (deleteError) {
+    console.error("[Database] Error unfollowing user:", deleteError);
+    return;
+  }
+
+  // Decrement followers count
+  const { data: profile } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('followersCount')
+    .eq('userId', followingId)
+    .single();
+
+  if (profile) {
+    await supabaseAdmin
+      .from('creatorProfiles')
+      .update({
+        followersCount: Math.max((profile.followersCount || 0) - 1, 0),
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('userId', followingId);
+  }
 }
 
-export async function isFollowing(followerId: number, followingId: number) {
-  const db = await getDb();
-  if (!db) return false;
-  const result = await db
-    .select()
-    .from(followers)
-    .where(
-      and(
-        eq(followers.followerId, followerId),
-        eq(followers.followingId, followingId)
-      )
-    )
-    .limit(1);
-  return result.length > 0;
+export async function isFollowing(followerId: number, followingId: number): Promise<boolean> {
+  if (!supabaseAdmin) return false;
+
+  const { data, error } = await supabaseAdmin
+    .from('followers')
+    .select('id')
+    .match({ followerId, followingId })
+    .limit(1)
+    .single();
+
+  return !error && !!data;
 }
 
 export async function getFollowers(userId: number, limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db
-    .select({
-      id: users.id,
-      name: users.name,
-      followedAt: followers.createdAt,
-    })
-    .from(followers)
-    .innerJoin(users, eq(followers.followerId, users.id))
-    .where(eq(followers.followingId, userId))
-    .orderBy(desc(followers.createdAt))
-    .limit(limit)
-    .offset(offset);
+  if (!supabaseAdmin) return [];
+
+  const { data: followRecords, error } = await supabaseAdmin
+    .from('followers')
+    .select('followerId, createdAt')
+    .eq('followingId', userId)
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error || !followRecords) return [];
+
+  const followerIds = followRecords.map(f => f.followerId);
+  const { data: users } = await supabaseAdmin
+    .from('users')
+    .select('id, name')
+    .in('id', followerIds);
+
+  const usersMap = new Map((users || []).map(u => [u.id, u]));
+
+  return followRecords.map(record => ({
+    id: usersMap.get(record.followerId)?.id || record.followerId,
+    name: usersMap.get(record.followerId)?.name || null,
+    followedAt: record.createdAt,
+  }));
 }
 
 export async function getFollowing(userId: number, limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db
-    .select({
-      profile: creatorProfiles,
-      user: {
-        id: users.id,
-        name: users.name,
-      },
-      followedAt: followers.createdAt,
-    })
-    .from(followers)
-    .innerJoin(users, eq(followers.followingId, users.id))
-    .leftJoin(creatorProfiles, eq(creatorProfiles.userId, users.id))
-    .where(eq(followers.followerId, userId))
-    .orderBy(desc(followers.createdAt))
-    .limit(limit)
-    .offset(offset);
+  if (!supabaseAdmin) return [];
+
+  const { data: followRecords, error } = await supabaseAdmin
+    .from('followers')
+    .select('followingId, createdAt')
+    .eq('followerId', userId)
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error || !followRecords) return [];
+
+  const followingIds = followRecords.map(f => f.followingId);
+
+  const { data: users } = await supabaseAdmin
+    .from('users')
+    .select('id, name')
+    .in('id', followingIds);
+
+  const { data: profiles } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('*')
+    .in('userId', followingIds);
+
+  const usersMap = new Map((users || []).map(u => [u.id, u]));
+  const profilesMap = new Map((profiles || []).map(p => [p.userId, p]));
+
+  return followRecords.map(record => ({
+    profile: profilesMap.get(record.followingId) || null,
+    user: usersMap.get(record.followingId) || { id: record.followingId, name: null },
+    followedAt: record.createdAt,
+  }));
 }
 
 // ============================================
 // POST FUNCTIONS
 // ============================================
 
-export async function createPost(data: InsertPost) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(posts).values(data).returning({ id: posts.id });
-  await db
-    .update(creatorProfiles)
-    .set({
-      postsCount: sql`${creatorProfiles.postsCount} + 1`,
-      updatedAt: new Date(),
+export async function createPost(data: InsertPost): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+
+  const { data: result, error } = await supabaseAdmin
+    .from('posts')
+    .insert({
+      ...data,
+      visibility: data.visibility || 'public',
+      isPinned: data.isPinned || false,
+      likesCount: 0,
+      commentsCount: 0,
+      sharesCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     })
-    .where(eq(creatorProfiles.id, data.creatorId));
-  return result[0].id;
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating post:", error);
+    throw error;
+  }
+
+  // Increment posts count for creator
+  const { data: profile } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('postsCount')
+    .eq('id', data.creatorId)
+    .single();
+
+  if (profile) {
+    await supabaseAdmin
+      .from('creatorProfiles')
+      .update({
+        postsCount: (profile.postsCount || 0) + 1,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', data.creatorId);
+  }
+
+  return result.id;
 }
 
-export async function addPostMedia(data: InsertPostMedia[]) {
+export async function addPostMedia(data: InsertPostMedia[]): Promise<void> {
   if (data.length === 0) return;
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(postMedia).values(data);
+  if (!supabaseAdmin) return;
+
+  const mediaWithTimestamp = data.map(item => ({
+    ...item,
+    createdAt: new Date().toISOString(),
+  }));
+
+  const { error } = await supabaseAdmin
+    .from('postMedia')
+    .insert(mediaWithTimestamp);
+
+  if (error) {
+    console.error("[Database] Error adding post media:", error);
+  }
 }
 
-export async function getPostById(postId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db
-    .select()
-    .from(posts)
-    .where(eq(posts.id, postId))
-    .limit(1);
-  return result[0] || null;
+export async function getPostById(postId: number): Promise<Post | null> {
+  if (!supabaseAdmin) return null;
+
+  const { data, error } = await supabaseAdmin
+    .from('posts')
+    .select('*')
+    .eq('id', postId)
+    .single();
+
+  if (error) return null;
+  return data as Post;
 }
 
 export async function getPostWithDetails(postId: number, currentUserId?: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const post = await db
-    .select({
-      post: posts,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-        userId: creatorProfiles.userId,
-      },
-    })
-    .from(posts)
-    .innerJoin(creatorProfiles, eq(posts.creatorId, creatorProfiles.id))
-    .where(eq(posts.id, postId))
-    .limit(1);
+  if (!supabaseAdmin) return null;
 
-  if (!post[0]) return null;
+  const { data: post, error: postError } = await supabaseAdmin
+    .from('posts')
+    .select('*')
+    .eq('id', postId)
+    .single();
 
-  const media = await db
-    .select()
-    .from(postMedia)
-    .where(eq(postMedia.postId, postId))
-    .orderBy(postMedia.orderIndex);
+  if (postError || !post) return null;
 
+  // Get creator info
+  const { data: creator } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName, avatarUrl, userId')
+    .eq('id', post.creatorId)
+    .single();
+
+  // Get media
+  const { data: media } = await supabaseAdmin
+    .from('postMedia')
+    .select('*')
+    .eq('postId', postId)
+    .order('orderIndex', { ascending: true });
+
+  // Check if current user liked
   let isLiked = false;
   if (currentUserId) {
-    const like = await db
-      .select()
-      .from(postLikes)
-      .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, currentUserId)))
-      .limit(1);
-    isLiked = like.length > 0;
+    const { data: like } = await supabaseAdmin
+      .from('postLikes')
+      .select('id')
+      .match({ postId, userId: currentUserId })
+      .single();
+    isLiked = !!like;
   }
 
   return {
-    ...post[0],
-    media,
+    post,
+    creator: creator || { id: post.creatorId, displayName: 'Unknown', avatarUrl: null, userId: 0 },
+    media: media || [],
     isLiked,
   };
 }
@@ -265,85 +494,90 @@ export async function getFeedPosts(
   offset = 0,
   feedType: "all" | "following" = "all"
 ) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  let postsResult;
+  let creatorIds: number[] = [];
 
   if (feedType === "following") {
-    const followedUserIds = db
-      .select({ id: followers.followingId })
-      .from(followers)
-      .where(eq(followers.followerId, currentUserId));
+    // Get followed user IDs
+    const { data: following } = await supabaseAdmin
+      .from('followers')
+      .select('followingId')
+      .eq('followerId', currentUserId);
 
-    postsResult = await db
-      .select({
-        post: posts,
-        creator: {
-          id: creatorProfiles.id,
-          displayName: creatorProfiles.displayName,
-          avatarUrl: creatorProfiles.avatarUrl,
-          userId: creatorProfiles.userId,
-        },
-      })
-      .from(posts)
-      .innerJoin(creatorProfiles, eq(posts.creatorId, creatorProfiles.id))
-      .where(
-        and(
-          eq(posts.visibility, "public"),
-          inArray(creatorProfiles.userId, followedUserIds)
-        )
-      )
-      .orderBy(desc(posts.createdAt))
-      .limit(limit)
-      .offset(offset);
-  } else {
-    postsResult = await db
-      .select({
-        post: posts,
-        creator: {
-          id: creatorProfiles.id,
-          displayName: creatorProfiles.displayName,
-          avatarUrl: creatorProfiles.avatarUrl,
-          userId: creatorProfiles.userId,
-        },
-      })
-      .from(posts)
-      .innerJoin(creatorProfiles, eq(posts.creatorId, creatorProfiles.id))
-      .where(eq(posts.visibility, "public"))
-      .orderBy(desc(posts.createdAt))
-      .limit(limit)
-      .offset(offset);
+    if (!following || following.length === 0) return [];
+
+    const followedUserIds = following.map(f => f.followingId);
+
+    // Get creator profiles for followed users
+    const { data: profiles } = await supabaseAdmin
+      .from('creatorProfiles')
+      .select('id')
+      .in('userId', followedUserIds);
+
+    if (!profiles || profiles.length === 0) return [];
+    creatorIds = profiles.map(p => p.id);
   }
 
-  const postsWithDetails = await Promise.all(
-    postsResult.map(async (item: typeof postsResult[0]) => {
-      const media = await db
-        .select()
-        .from(postMedia)
-        .where(eq(postMedia.postId, item.post.id))
-        .orderBy(postMedia.orderIndex);
+  // Build query
+  let query = supabaseAdmin
+    .from('posts')
+    .select('*')
+    .eq('visibility', 'public')
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
 
-      const like = await db
-        .select()
-        .from(postLikes)
-        .where(
-          and(
-            eq(postLikes.postId, item.post.id),
-            eq(postLikes.userId, currentUserId)
-          )
-        )
-        .limit(1);
+  if (feedType === "following" && creatorIds.length > 0) {
+    query = query.in('creatorId', creatorIds);
+  }
 
-      return {
-        ...item,
-        media,
-        isLiked: like.length > 0,
-      };
-    })
-  );
+  const { data: posts, error } = await query;
 
-  return postsWithDetails;
+  if (error || !posts) return [];
+
+  // Get all creator IDs from posts
+  const postCreatorIds = [...new Set(posts.map(p => p.creatorId))];
+
+  // Get creators
+  const { data: creators } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName, avatarUrl, userId')
+    .in('id', postCreatorIds);
+
+  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+
+  // Get all post IDs
+  const postIds = posts.map(p => p.id);
+
+  // Get media for all posts
+  const { data: allMedia } = await supabaseAdmin
+    .from('postMedia')
+    .select('*')
+    .in('postId', postIds)
+    .order('orderIndex', { ascending: true });
+
+  const mediaByPost = new Map<number, typeof allMedia>();
+  (allMedia || []).forEach(m => {
+    const existing = mediaByPost.get(m.postId) || [];
+    existing.push(m);
+    mediaByPost.set(m.postId, existing);
+  });
+
+  // Check which posts current user liked
+  const { data: likes } = await supabaseAdmin
+    .from('postLikes')
+    .select('postId')
+    .eq('userId', currentUserId)
+    .in('postId', postIds);
+
+  const likedPostIds = new Set((likes || []).map(l => l.postId));
+
+  return posts.map(post => ({
+    post,
+    creator: creatorsMap.get(post.creatorId) || { id: post.creatorId, displayName: 'Unknown', avatarUrl: null, userId: 0 },
+    media: mediaByPost.get(post.id) || [],
+    isLiked: likedPostIds.has(post.id),
+  }));
 }
 
 export async function getCreatorPosts(
@@ -352,166 +586,246 @@ export async function getCreatorPosts(
   limit = 20,
   offset = 0
 ) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  const postsResult = await db
-    .select({
-      post: posts,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-        userId: creatorProfiles.userId,
-      },
-    })
-    .from(posts)
-    .innerJoin(creatorProfiles, eq(posts.creatorId, creatorProfiles.id))
-    .where(eq(posts.creatorId, creatorId))
-    .orderBy(desc(posts.isPinned), desc(posts.createdAt))
-    .limit(limit)
-    .offset(offset);
+  const { data: posts, error } = await supabaseAdmin
+    .from('posts')
+    .select('*')
+    .eq('creatorId', creatorId)
+    .order('isPinned', { ascending: false })
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
 
-  const postsWithDetails = await Promise.all(
-    postsResult.map(async (item: typeof postsResult[0]) => {
-      const media = await db
-        .select()
-        .from(postMedia)
-        .where(eq(postMedia.postId, item.post.id))
-        .orderBy(postMedia.orderIndex);
+  if (error || !posts) return [];
 
-      let isLiked = false;
-      if (currentUserId) {
-        const like = await db
-          .select()
-          .from(postLikes)
-          .where(
-            and(
-              eq(postLikes.postId, item.post.id),
-              eq(postLikes.userId, currentUserId)
-            )
-          )
-          .limit(1);
-        isLiked = like.length > 0;
-      }
+  // Get creator info
+  const { data: creator } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName, avatarUrl, userId')
+    .eq('id', creatorId)
+    .single();
 
-      return {
-        ...item,
-        media,
-        isLiked,
-      };
-    })
-  );
+  // Get all post IDs
+  const postIds = posts.map(p => p.id);
 
-  return postsWithDetails;
-}
+  // Get media for all posts
+  const { data: allMedia } = await supabaseAdmin
+    .from('postMedia')
+    .select('*')
+    .in('postId', postIds)
+    .order('orderIndex', { ascending: true });
 
-export async function deletePost(postId: number, creatorId: number) {
-  const db = await getDb();
-  if (!db) return;
+  const mediaByPost = new Map<number, typeof allMedia>();
+  (allMedia || []).forEach(m => {
+    const existing = mediaByPost.get(m.postId) || [];
+    existing.push(m);
+    mediaByPost.set(m.postId, existing);
+  });
 
-  await db.delete(postMedia).where(eq(postMedia.postId, postId));
-  await db.delete(postLikes).where(eq(postLikes.postId, postId));
-
-  const comments = await db
-    .select({ id: postComments.id })
-    .from(postComments)
-    .where(eq(postComments.postId, postId));
-
-  if (comments.length > 0) {
-    await db
-      .delete(commentLikes)
-      .where(inArray(commentLikes.commentId, comments.map((c: { id: number }) => c.id)));
-    await db.delete(postComments).where(eq(postComments.postId, postId));
+  // Check which posts current user liked
+  let likedPostIds = new Set<number>();
+  if (currentUserId) {
+    const { data: likes } = await supabaseAdmin
+      .from('postLikes')
+      .select('postId')
+      .eq('userId', currentUserId)
+      .in('postId', postIds);
+    likedPostIds = new Set((likes || []).map(l => l.postId));
   }
 
-  await db.delete(posts).where(eq(posts.id, postId));
+  return posts.map(post => ({
+    post,
+    creator: creator || { id: creatorId, displayName: 'Unknown', avatarUrl: null, userId: 0 },
+    media: mediaByPost.get(post.id) || [],
+    isLiked: likedPostIds.has(post.id),
+  }));
+}
 
-  await db
-    .update(creatorProfiles)
-    .set({
-      postsCount: sql`GREATEST(${creatorProfiles.postsCount} - 1, 0)`,
-      updatedAt: new Date(),
-    })
-    .where(eq(creatorProfiles.id, creatorId));
+export async function deletePost(postId: number, creatorId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  // Delete media
+  await supabaseAdmin.from('postMedia').delete().eq('postId', postId);
+
+  // Delete likes
+  await supabaseAdmin.from('postLikes').delete().eq('postId', postId);
+
+  // Get comments
+  const { data: comments } = await supabaseAdmin
+    .from('postComments')
+    .select('id')
+    .eq('postId', postId);
+
+  if (comments && comments.length > 0) {
+    const commentIds = comments.map(c => c.id);
+    // Delete comment likes
+    await supabaseAdmin.from('commentLikes').delete().in('commentId', commentIds);
+    // Delete comments
+    await supabaseAdmin.from('postComments').delete().eq('postId', postId);
+  }
+
+  // Delete post
+  await supabaseAdmin.from('posts').delete().eq('id', postId);
+
+  // Decrement posts count
+  const { data: profile } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('postsCount')
+    .eq('id', creatorId)
+    .single();
+
+  if (profile) {
+    await supabaseAdmin
+      .from('creatorProfiles')
+      .update({
+        postsCount: Math.max((profile.postsCount || 0) - 1, 0),
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', creatorId);
+  }
 }
 
 export async function updatePost(
   postId: number,
   data: { content?: string; visibility?: "public" | "followers" | "private"; isPinned?: boolean }
-) {
-  const db = await getDb();
-  if (!db) return;
-  await db
-    .update(posts)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(posts.id, postId));
+): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error } = await supabaseAdmin
+    .from('posts')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', postId);
+
+  if (error) {
+    console.error("[Database] Error updating post:", error);
+  }
 }
 
 // ============================================
 // LIKE FUNCTIONS
 // ============================================
 
-export async function likePost(postId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(postLikes).values({ postId, userId });
-  await db
-    .update(posts)
-    .set({
-      likesCount: sql`${posts.likesCount} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(posts.id, postId));
+export async function likePost(postId: number, userId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error: insertError } = await supabaseAdmin
+    .from('postLikes')
+    .insert({
+      postId,
+      userId,
+      createdAt: new Date().toISOString(),
+    });
+
+  if (insertError) {
+    console.error("[Database] Error liking post:", insertError);
+    return;
+  }
+
+  // Increment likes count
+  const { data: post } = await supabaseAdmin
+    .from('posts')
+    .select('likesCount')
+    .eq('id', postId)
+    .single();
+
+  if (post) {
+    await supabaseAdmin
+      .from('posts')
+      .update({
+        likesCount: (post.likesCount || 0) + 1,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', postId);
+  }
 }
 
-export async function unlikePost(postId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db
-    .delete(postLikes)
-    .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
-  await db
-    .update(posts)
-    .set({
-      likesCount: sql`GREATEST(${posts.likesCount} - 1, 0)`,
-      updatedAt: new Date(),
-    })
-    .where(eq(posts.id, postId));
+export async function unlikePost(postId: number, userId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error: deleteError } = await supabaseAdmin
+    .from('postLikes')
+    .delete()
+    .match({ postId, userId });
+
+  if (deleteError) {
+    console.error("[Database] Error unliking post:", deleteError);
+    return;
+  }
+
+  // Decrement likes count
+  const { data: post } = await supabaseAdmin
+    .from('posts')
+    .select('likesCount')
+    .eq('id', postId)
+    .single();
+
+  if (post) {
+    await supabaseAdmin
+      .from('posts')
+      .update({
+        likesCount: Math.max((post.likesCount || 0) - 1, 0),
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', postId);
+  }
 }
 
-export async function hasLikedPost(postId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return false;
-  const result = await db
-    .select()
-    .from(postLikes)
-    .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)))
-    .limit(1);
-  return result.length > 0;
+export async function hasLikedPost(postId: number, userId: number): Promise<boolean> {
+  if (!supabaseAdmin) return false;
+
+  const { data, error } = await supabaseAdmin
+    .from('postLikes')
+    .select('id')
+    .match({ postId, userId })
+    .single();
+
+  return !error && !!data;
 }
 
 // ============================================
 // COMMENT FUNCTIONS
 // ============================================
 
-export async function createComment(data: InsertPostComment) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db
-    .insert(postComments)
-    .values(data)
-    .returning({ id: postComments.id });
+export async function createComment(data: InsertPostComment): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  await db
-    .update(posts)
-    .set({
-      commentsCount: sql`${posts.commentsCount} + 1`,
-      updatedAt: new Date(),
+  const { data: result, error } = await supabaseAdmin
+    .from('postComments')
+    .insert({
+      ...data,
+      likesCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     })
-    .where(eq(posts.id, data.postId));
+    .select('id')
+    .single();
 
-  return result[0].id;
+  if (error) {
+    console.error("[Database] Error creating comment:", error);
+    throw error;
+  }
+
+  // Increment comments count on post
+  const { data: post } = await supabaseAdmin
+    .from('posts')
+    .select('commentsCount')
+    .eq('id', data.postId)
+    .single();
+
+  if (post) {
+    await supabaseAdmin
+      .from('posts')
+      .update({
+        commentsCount: (post.commentsCount || 0) + 1,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', data.postId);
+  }
+
+  return result.id;
 }
 
 export async function getPostComments(
@@ -520,151 +834,218 @@ export async function getPostComments(
   limit = 50,
   offset = 0
 ) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  const commentsResult = await db
-    .select({
-      comment: postComments,
-      user: {
-        id: users.id,
-        name: users.name,
-      },
-    })
-    .from(postComments)
-    .innerJoin(users, eq(postComments.userId, users.id))
-    .where(eq(postComments.postId, postId))
-    .orderBy(desc(postComments.createdAt))
-    .limit(limit)
-    .offset(offset);
+  const { data: comments, error } = await supabaseAdmin
+    .from('postComments')
+    .select('*')
+    .eq('postId', postId)
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
 
-  const commentsWithLikes = await Promise.all(
-    commentsResult.map(async (item: typeof commentsResult[0]) => {
-      let isLiked = false;
-      if (currentUserId) {
-        const like = await db
-          .select()
-          .from(commentLikes)
-          .where(
-            and(
-              eq(commentLikes.commentId, item.comment.id),
-              eq(commentLikes.userId, currentUserId)
-            )
-          )
-          .limit(1);
-        isLiked = like.length > 0;
-      }
-      return { ...item, isLiked };
-    })
-  );
+  if (error || !comments) return [];
 
-  return commentsWithLikes;
+  // Get user info for comments
+  const userIds = [...new Set(comments.map(c => c.userId))];
+  const { data: users } = await supabaseAdmin
+    .from('users')
+    .select('id, name')
+    .in('id', userIds);
+
+  const usersMap = new Map((users || []).map(u => [u.id, u]));
+
+  // Check which comments current user liked
+  let likedCommentIds = new Set<number>();
+  if (currentUserId) {
+    const commentIds = comments.map(c => c.id);
+    const { data: likes } = await supabaseAdmin
+      .from('commentLikes')
+      .select('commentId')
+      .eq('userId', currentUserId)
+      .in('commentId', commentIds);
+    likedCommentIds = new Set((likes || []).map(l => l.commentId));
+  }
+
+  return comments.map(comment => ({
+    comment,
+    user: usersMap.get(comment.userId) || { id: comment.userId, name: null },
+    isLiked: likedCommentIds.has(comment.id),
+  }));
 }
 
-export async function deleteComment(commentId: number, postId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(commentLikes).where(eq(commentLikes.commentId, commentId));
-  await db.delete(postComments).where(eq(postComments.id, commentId));
-  await db
-    .update(posts)
-    .set({
-      commentsCount: sql`GREATEST(${posts.commentsCount} - 1, 0)`,
-      updatedAt: new Date(),
-    })
-    .where(eq(posts.id, postId));
+export async function deleteComment(commentId: number, postId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  // Delete comment likes
+  await supabaseAdmin.from('commentLikes').delete().eq('commentId', commentId);
+
+  // Delete comment
+  await supabaseAdmin.from('postComments').delete().eq('id', commentId);
+
+  // Decrement comments count on post
+  const { data: post } = await supabaseAdmin
+    .from('posts')
+    .select('commentsCount')
+    .eq('id', postId)
+    .single();
+
+  if (post) {
+    await supabaseAdmin
+      .from('posts')
+      .update({
+        commentsCount: Math.max((post.commentsCount || 0) - 1, 0),
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', postId);
+  }
 }
 
-export async function likeComment(commentId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(commentLikes).values({ commentId, userId });
-  await db
-    .update(postComments)
-    .set({
-      likesCount: sql`${postComments.likesCount} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(postComments.id, commentId));
+export async function likeComment(commentId: number, userId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error: insertError } = await supabaseAdmin
+    .from('commentLikes')
+    .insert({
+      commentId,
+      userId,
+      createdAt: new Date().toISOString(),
+    });
+
+  if (insertError) {
+    console.error("[Database] Error liking comment:", insertError);
+    return;
+  }
+
+  // Increment likes count
+  const { data: comment } = await supabaseAdmin
+    .from('postComments')
+    .select('likesCount')
+    .eq('id', commentId)
+    .single();
+
+  if (comment) {
+    await supabaseAdmin
+      .from('postComments')
+      .update({
+        likesCount: (comment.likesCount || 0) + 1,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', commentId);
+  }
 }
 
-export async function unlikeComment(commentId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db
-    .delete(commentLikes)
-    .where(
-      and(
-        eq(commentLikes.commentId, commentId),
-        eq(commentLikes.userId, userId)
-      )
-    );
-  await db
-    .update(postComments)
-    .set({
-      likesCount: sql`GREATEST(${postComments.likesCount} - 1, 0)`,
-      updatedAt: new Date(),
-    })
-    .where(eq(postComments.id, commentId));
+export async function unlikeComment(commentId: number, userId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error: deleteError } = await supabaseAdmin
+    .from('commentLikes')
+    .delete()
+    .match({ commentId, userId });
+
+  if (deleteError) {
+    console.error("[Database] Error unliking comment:", deleteError);
+    return;
+  }
+
+  // Decrement likes count
+  const { data: comment } = await supabaseAdmin
+    .from('postComments')
+    .select('likesCount')
+    .eq('id', commentId)
+    .single();
+
+  if (comment) {
+    await supabaseAdmin
+      .from('postComments')
+      .update({
+        likesCount: Math.max((comment.likesCount || 0) - 1, 0),
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', commentId);
+  }
 }
 
 // ============================================
 // NOTIFICATION FUNCTIONS
 // ============================================
 
-export async function createNotification(data: InsertNotification) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(notifications).values(data);
+export async function createNotification(data: InsertNotification): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error } = await supabaseAdmin
+    .from('notifications')
+    .insert({
+      ...data,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+
+  if (error) {
+    console.error("[Database] Error creating notification:", error);
+  }
 }
 
 export async function getUserNotifications(
   userId: number,
   limit = 20,
   offset = 0
-) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db
-    .select()
-    .from(notifications)
-    .where(eq(notifications.userId, userId))
-    .orderBy(desc(notifications.createdAt))
-    .limit(limit)
-    .offset(offset);
+): Promise<Notification[]> {
+  if (!supabaseAdmin) return [];
+
+  const { data, error } = await supabaseAdmin
+    .from('notifications')
+    .select('*')
+    .eq('userId', userId)
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("[Database] Error fetching notifications:", error);
+    return [];
+  }
+
+  return (data || []) as Notification[];
 }
 
-export async function markNotificationAsRead(notificationId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db
-    .update(notifications)
-    .set({ isRead: true })
-    .where(
-      and(
-        eq(notifications.id, notificationId),
-        eq(notifications.userId, userId)
-      )
-    );
+export async function markNotificationAsRead(notificationId: number, userId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error } = await supabaseAdmin
+    .from('notifications')
+    .update({ isRead: true })
+    .match({ id: notificationId, userId });
+
+  if (error) {
+    console.error("[Database] Error marking notification as read:", error);
+  }
 }
 
-export async function markAllNotificationsAsRead(userId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db
-    .update(notifications)
-    .set({ isRead: true })
-    .where(eq(notifications.userId, userId));
+export async function markAllNotificationsAsRead(userId: number): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error } = await supabaseAdmin
+    .from('notifications')
+    .update({ isRead: true })
+    .eq('userId', userId);
+
+  if (error) {
+    console.error("[Database] Error marking all notifications as read:", error);
+  }
 }
 
-export async function getUnreadNotificationsCount(userId: number) {
-  const db = await getDb();
-  if (!db) return 0;
-  const result = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(notifications)
-    .where(
-      and(eq(notifications.userId, userId), eq(notifications.isRead, false))
-    );
-  return result[0]?.count || 0;
+export async function getUnreadNotificationsCount(userId: number): Promise<number> {
+  if (!supabaseAdmin) return 0;
+
+  const { count, error } = await supabaseAdmin
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('userId', userId)
+    .eq('isRead', false);
+
+  if (error) {
+    console.error("[Database] Error counting unread notifications:", error);
+    return 0;
+  }
+
+  return count || 0;
 }

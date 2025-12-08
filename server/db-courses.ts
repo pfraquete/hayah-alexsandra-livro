@@ -1,111 +1,305 @@
-import { eq, desc, and, sql, inArray, asc } from "drizzle-orm";
-import { getDb } from "./db";
 import { supabaseAdmin } from "./supabase";
-import {
-  courses,
-  courseModules,
-  courseLessons,
-  courseEnrollments,
-  lessonProgress,
-  courseReviews,
-  digitalProducts,
-  digitalPurchases,
-  creatorProfiles,
-  users,
-  type InsertCourse,
-  type InsertCourseModule,
-  type InsertCourseLesson,
-  type InsertCourseEnrollment,
-  type InsertCourseReview,
-  type InsertDigitalProduct,
-} from "../drizzle/schema";
+
+// Types for courses module
+export interface Course {
+  id: number;
+  creatorId: number;
+  title: string;
+  slug: string;
+  description: string | null;
+  shortDescription: string | null;
+  thumbnailUrl: string | null;
+  previewVideoUrl: string | null;
+  priceCents: number;
+  compareAtPriceCents: number | null;
+  status: "draft" | "published" | "archived";
+  lessonsCount: number;
+  totalDurationMinutes: number;
+  studentsCount: number;
+  averageRating: string | null;
+  reviewsCount: number;
+  isFeatured: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface CourseModule {
+  id: number;
+  courseId: number;
+  title: string;
+  description: string | null;
+  orderIndex: number;
+  lessonsCount: number;
+  durationMinutes: number;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface CourseLesson {
+  id: number;
+  moduleId: number;
+  courseId: number;
+  title: string;
+  description: string | null;
+  lessonType: "video" | "text" | "quiz" | "download";
+  videoUrl: string | null;
+  videoDurationSeconds: number | null;
+  content: string | null;
+  orderIndex: number;
+  isFree: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface CourseEnrollment {
+  id: number;
+  courseId: number;
+  userId: number;
+  progressPercent: number;
+  completedLessonsCount: number;
+  lastAccessedAt: Date | null;
+  completedAt: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface LessonProgress {
+  id: number;
+  lessonId: number;
+  userId: number;
+  enrollmentId: number;
+  watchedSeconds: number;
+  isCompleted: boolean;
+  completedAt: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface CourseReview {
+  id: number;
+  courseId: number;
+  userId: number;
+  rating: number;
+  title: string | null;
+  content: string | null;
+  isVerified: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface DigitalProduct {
+  id: number;
+  creatorId: number;
+  title: string;
+  slug: string;
+  description: string | null;
+  thumbnailUrl: string | null;
+  fileUrl: string;
+  fileType: string;
+  fileSizeBytes: number | null;
+  priceCents: number;
+  compareAtPriceCents: number | null;
+  status: "draft" | "published" | "archived";
+  salesCount: number;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface DigitalPurchase {
+  id: number;
+  productId: number;
+  userId: number;
+  orderId: number | null;
+  pricePaidCents: number;
+  downloadCount: number;
+  lastDownloadedAt: Date | null;
+  createdAt: Date | null;
+}
+
+export interface InsertCourse {
+  creatorId: number;
+  title: string;
+  slug: string;
+  description?: string | null;
+  shortDescription?: string | null;
+  thumbnailUrl?: string | null;
+  previewVideoUrl?: string | null;
+  priceCents: number;
+  compareAtPriceCents?: number | null;
+  status?: "draft" | "published" | "archived";
+  isFeatured?: boolean;
+}
+
+export interface InsertCourseModule {
+  courseId: number;
+  title: string;
+  description?: string | null;
+  orderIndex: number;
+}
+
+export interface InsertCourseLesson {
+  moduleId: number;
+  courseId: number;
+  title: string;
+  description?: string | null;
+  lessonType?: "video" | "text" | "quiz" | "download";
+  videoUrl?: string | null;
+  videoDurationSeconds?: number | null;
+  content?: string | null;
+  orderIndex: number;
+  isFree?: boolean;
+}
+
+export interface InsertCourseEnrollment {
+  courseId: number;
+  userId: number;
+}
+
+export interface InsertCourseReview {
+  courseId: number;
+  userId: number;
+  rating: number;
+  title?: string | null;
+  content?: string | null;
+}
+
+export interface InsertDigitalProduct {
+  creatorId: number;
+  title: string;
+  slug: string;
+  description?: string | null;
+  thumbnailUrl?: string | null;
+  fileUrl: string;
+  fileType: string;
+  fileSizeBytes?: number | null;
+  priceCents: number;
+  compareAtPriceCents?: number | null;
+  status?: "draft" | "published" | "archived";
+}
 
 // ============================================
 // COURSE FUNCTIONS
 // ============================================
 
-export async function createCourse(data: InsertCourse) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function createCourse(data: InsertCourse): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  const result = await db.insert(courses).values(data).returning({ id: courses.id });
+  const { data: result, error } = await supabaseAdmin
+    .from('courses')
+    .insert({
+      ...data,
+      status: data.status || 'draft',
+      isFeatured: data.isFeatured || false,
+      lessonsCount: 0,
+      totalDurationMinutes: 0,
+      studentsCount: 0,
+      reviewsCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating course:", error);
+    throw error;
+  }
 
   // Increment courses count for creator
-  await db
-    .update(creatorProfiles)
-    .set({
-      coursesCount: sql`${creatorProfiles.coursesCount} + 1`,
-      updatedAt: new Date(),
+  const { data: profile } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('coursesCount')
+    .eq('id', data.creatorId)
+    .single();
+
+  if (profile) {
+    await supabaseAdmin
+      .from('creatorProfiles')
+      .update({
+        coursesCount: (profile.coursesCount || 0) + 1,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', data.creatorId);
+  }
+
+  return result.id;
+}
+
+export async function updateCourse(courseId: number, data: Partial<InsertCourse>): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
+
+  const { error } = await supabaseAdmin
+    .from('courses')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
     })
-    .where(eq(creatorProfiles.id, data.creatorId));
+    .eq('id', courseId);
 
-  return result[0].id;
+  if (error) {
+    console.error("[Database] Error updating course:", error);
+    throw error;
+  }
 }
 
-export async function updateCourse(courseId: number, data: Partial<InsertCourse>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function getCourseById(courseId: number): Promise<Course | null> {
+  if (!supabaseAdmin) return null;
 
-  await db
-    .update(courses)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(courses.id, courseId));
-}
+  const { data, error } = await supabaseAdmin
+    .from('courses')
+    .select('*')
+    .eq('id', courseId)
+    .single();
 
-export async function getCourseById(courseId: number) {
-  const db = await getDb();
-  if (!db) return null;
-
-  const result = await db
-    .select()
-    .from(courses)
-    .where(eq(courses.id, courseId))
-    .limit(1);
-  return result[0] || null;
+  if (error) return null;
+  return data as Course;
 }
 
 export async function getCourseBySlug(slug: string) {
-  const db = await getDb();
-  if (!db) return null;
+  if (!supabaseAdmin) return null;
 
-  const result = await db
-    .select({
-      course: courses,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-        userId: creatorProfiles.userId,
-      },
-    })
-    .from(courses)
-    .innerJoin(creatorProfiles, eq(courses.creatorId, creatorProfiles.id))
-    .where(eq(courses.slug, slug))
-    .limit(1);
-  return result[0] || null;
+  const { data: course, error } = await supabaseAdmin
+    .from('courses')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  if (error || !course) return null;
+
+  const { data: creator } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName, avatarUrl, userId')
+    .eq('id', course.creatorId)
+    .single();
+
+  return {
+    course,
+    creator: creator || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null, userId: 0 },
+  };
 }
 
 export async function getCourseWithModules(courseId: number) {
-  const db = await getDb();
-  if (!db) return null;
+  if (!supabaseAdmin) return null;
 
   const course = await getCourseById(courseId);
   if (!course) return null;
 
-  const modules = await db
-    .select()
-    .from(courseModules)
-    .where(eq(courseModules.courseId, courseId))
-    .orderBy(asc(courseModules.orderIndex));
+  const { data: modules } = await supabaseAdmin
+    .from('courseModules')
+    .select('*')
+    .eq('courseId', courseId)
+    .order('orderIndex', { ascending: true });
+
+  if (!modules) return { ...course, modules: [] };
 
   const modulesWithLessons = await Promise.all(
     modules.map(async (module) => {
-      const lessons = await db
-        .select()
-        .from(courseLessons)
-        .where(eq(courseLessons.moduleId, module.id))
-        .orderBy(asc(courseLessons.orderIndex));
-      return { ...module, lessons };
+      const { data: lessons } = await supabaseAdmin
+        .from('courseLessons')
+        .select('*')
+        .eq('moduleId', module.id)
+        .order('orderIndex', { ascending: true });
+      return { ...module, lessons: lessons || [] };
     })
   );
 
@@ -113,180 +307,217 @@ export async function getCourseWithModules(courseId: number) {
 }
 
 export async function getPublishedCourses(limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  return await db
-    .select({
-      course: courses,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-      },
-    })
-    .from(courses)
-    .innerJoin(creatorProfiles, eq(courses.creatorId, creatorProfiles.id))
-    .where(eq(courses.status, "published"))
-    .orderBy(desc(courses.createdAt))
-    .limit(limit)
-    .offset(offset);
+  const { data: courses, error } = await supabaseAdmin
+    .from('courses')
+    .select('*')
+    .eq('status', 'published')
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error || !courses) return [];
+
+  const creatorIds = [...new Set(courses.map(c => c.creatorId))];
+  const { data: creators } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName, avatarUrl')
+    .in('id', creatorIds);
+
+  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+
+  return courses.map(course => ({
+    course,
+    creator: creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null },
+  }));
 }
 
 export async function getFeaturedCourses(limit = 6) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  return await db
-    .select({
-      course: courses,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-      },
-    })
-    .from(courses)
-    .innerJoin(creatorProfiles, eq(courses.creatorId, creatorProfiles.id))
-    .where(and(eq(courses.status, "published"), eq(courses.isFeatured, true)))
-    .orderBy(desc(courses.studentsCount))
+  const { data: courses, error } = await supabaseAdmin
+    .from('courses')
+    .select('*')
+    .eq('status', 'published')
+    .eq('isFeatured', true)
+    .order('studentsCount', { ascending: false })
     .limit(limit);
+
+  if (error || !courses) return [];
+
+  const creatorIds = [...new Set(courses.map(c => c.creatorId))];
+  const { data: creators } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName, avatarUrl')
+    .in('id', creatorIds);
+
+  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+
+  return courses.map(course => ({
+    course,
+    creator: creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null },
+  }));
 }
 
-export async function getCreatorCourses(creatorId: number) {
-  const db = await getDb();
-  if (!db) return [];
+export async function getCreatorCourses(creatorId: number): Promise<Course[]> {
+  if (!supabaseAdmin) return [];
 
-  return await db
-    .select()
-    .from(courses)
-    .where(eq(courses.creatorId, creatorId))
-    .orderBy(desc(courses.createdAt));
+  const { data, error } = await supabaseAdmin
+    .from('courses')
+    .select('*')
+    .eq('creatorId', creatorId)
+    .order('createdAt', { ascending: false });
+
+  if (error) return [];
+  return (data || []) as Course[];
 }
 
-export async function deleteCourse(courseId: number, creatorId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function deleteCourse(courseId: number, creatorId: number): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  // Delete all related data
-  const modules = await db
-    .select({ id: courseModules.id })
-    .from(courseModules)
-    .where(eq(courseModules.courseId, courseId));
+  // Get modules
+  const { data: modules } = await supabaseAdmin
+    .from('courseModules')
+    .select('id')
+    .eq('courseId', courseId);
 
-  if (modules.length > 0) {
-    const moduleIds = modules.map((m) => m.id);
+  if (modules && modules.length > 0) {
+    const moduleIds = modules.map(m => m.id);
 
-    // Delete lessons and their progress
-    const lessons = await db
-      .select({ id: courseLessons.id })
-      .from(courseLessons)
-      .where(inArray(courseLessons.moduleId, moduleIds));
+    // Get lessons
+    const { data: lessons } = await supabaseAdmin
+      .from('courseLessons')
+      .select('id')
+      .in('moduleId', moduleIds);
 
-    if (lessons.length > 0) {
-      await db
-        .delete(lessonProgress)
-        .where(inArray(lessonProgress.lessonId, lessons.map((l) => l.id)));
+    if (lessons && lessons.length > 0) {
+      const lessonIds = lessons.map(l => l.id);
+      // Delete lesson progress
+      await supabaseAdmin.from('lessonProgress').delete().in('lessonId', lessonIds);
     }
 
-    await db
-      .delete(courseLessons)
-      .where(inArray(courseLessons.moduleId, moduleIds));
-    await db.delete(courseModules).where(eq(courseModules.courseId, courseId));
+    // Delete lessons
+    await supabaseAdmin.from('courseLessons').delete().in('moduleId', moduleIds);
+
+    // Delete modules
+    await supabaseAdmin.from('courseModules').delete().eq('courseId', courseId);
   }
 
   // Delete enrollments and reviews
-  await db.delete(courseEnrollments).where(eq(courseEnrollments.courseId, courseId));
-  await db.delete(courseReviews).where(eq(courseReviews.courseId, courseId));
+  await supabaseAdmin.from('courseEnrollments').delete().eq('courseId', courseId);
+  await supabaseAdmin.from('courseReviews').delete().eq('courseId', courseId);
 
   // Delete course
-  await db.delete(courses).where(eq(courses.id, courseId));
+  await supabaseAdmin.from('courses').delete().eq('id', courseId);
 
   // Decrement courses count
-  await db
-    .update(creatorProfiles)
-    .set({
-      coursesCount: sql`GREATEST(${creatorProfiles.coursesCount} - 1, 0)`,
-      updatedAt: new Date(),
-    })
-    .where(eq(creatorProfiles.id, creatorId));
+  const { data: profile } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('coursesCount')
+    .eq('id', creatorId)
+    .single();
+
+  if (profile) {
+    await supabaseAdmin
+      .from('creatorProfiles')
+      .update({
+        coursesCount: Math.max((profile.coursesCount || 0) - 1, 0),
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', creatorId);
+  }
 }
 
 // ============================================
 // MODULE FUNCTIONS
 // ============================================
 
-export async function createModule(data: InsertCourseModule) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function createModule(data: InsertCourseModule): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  const result = await db
-    .insert(courseModules)
-    .values(data)
-    .returning({ id: courseModules.id });
-  return result[0].id;
+  const { data: result, error } = await supabaseAdmin
+    .from('courseModules')
+    .insert({
+      ...data,
+      lessonsCount: 0,
+      durationMinutes: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating module:", error);
+    throw error;
+  }
+
+  return result.id;
 }
 
-export async function updateModule(moduleId: number, data: Partial<InsertCourseModule>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function updateModule(moduleId: number, data: Partial<InsertCourseModule>): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  await db
-    .update(courseModules)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(courseModules.id, moduleId));
+  const { error } = await supabaseAdmin
+    .from('courseModules')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', moduleId);
+
+  if (error) {
+    console.error("[Database] Error updating module:", error);
+    throw error;
+  }
 }
 
-export async function getModuleById(moduleId: number) {
-  const db = await getDb();
-  if (!db) return null;
+export async function getModuleById(moduleId: number): Promise<CourseModule | null> {
+  if (!supabaseAdmin) return null;
 
-  const result = await db
-    .select()
-    .from(courseModules)
-    .where(eq(courseModules.id, moduleId))
-    .limit(1);
-  return result[0] || null;
+  const { data, error } = await supabaseAdmin
+    .from('courseModules')
+    .select('*')
+    .eq('id', moduleId)
+    .single();
+
+  if (error) return null;
+  return data as CourseModule;
 }
 
-export async function deleteModule(moduleId: number, courseId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function deleteModule(moduleId: number, courseId: number): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  // Delete lessons in module
-  const lessons = await db
-    .select({ id: courseLessons.id })
-    .from(courseLessons)
-    .where(eq(courseLessons.moduleId, moduleId));
+  // Get lessons in module
+  const { data: lessons } = await supabaseAdmin
+    .from('courseLessons')
+    .select('id')
+    .eq('moduleId', moduleId);
 
-  if (lessons.length > 0) {
-    await db
-      .delete(lessonProgress)
-      .where(inArray(lessonProgress.lessonId, lessons.map((l) => l.id)));
-    await db.delete(courseLessons).where(eq(courseLessons.moduleId, moduleId));
+  if (lessons && lessons.length > 0) {
+    const lessonIds = lessons.map(l => l.id);
+    await supabaseAdmin.from('lessonProgress').delete().in('lessonId', lessonIds);
+    await supabaseAdmin.from('courseLessons').delete().eq('moduleId', moduleId);
   }
 
   // Delete module
-  await db.delete(courseModules).where(eq(courseModules.id, moduleId));
+  await supabaseAdmin.from('courseModules').delete().eq('id', moduleId);
 
   // Update course lesson count
   await updateCourseLessonCount(courseId);
 }
 
-export async function reorderModules(courseId: number, moduleIds: number[]) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function reorderModules(courseId: number, moduleIds: number[]): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
   for (let i = 0; i < moduleIds.length; i++) {
-    await db
-      .update(courseModules)
-      .set({ orderIndex: i, updatedAt: new Date() })
-      .where(
-        and(
-          eq(courseModules.id, moduleIds[i]),
-          eq(courseModules.courseId, courseId)
-        )
-      );
+    await supabaseAdmin
+      .from('courseModules')
+      .update({
+        orderIndex: i,
+        updatedAt: new Date().toISOString(),
+      })
+      .match({ id: moduleIds[i], courseId });
   }
 }
 
@@ -294,217 +525,257 @@ export async function reorderModules(courseId: number, moduleIds: number[]) {
 // LESSON FUNCTIONS
 // ============================================
 
-export async function createLesson(data: InsertCourseLesson) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function createLesson(data: InsertCourseLesson): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  const result = await db
-    .insert(courseLessons)
-    .values(data)
-    .returning({ id: courseLessons.id });
+  const { data: result, error } = await supabaseAdmin
+    .from('courseLessons')
+    .insert({
+      ...data,
+      lessonType: data.lessonType || 'video',
+      isFree: data.isFree || false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating lesson:", error);
+    throw error;
+  }
 
   // Update module and course counts
   await updateModuleLessonCount(data.moduleId);
   await updateCourseLessonCount(data.courseId);
 
-  return result[0].id;
+  return result.id;
 }
 
-export async function updateLesson(lessonId: number, data: Partial<InsertCourseLesson>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function updateLesson(lessonId: number, data: Partial<InsertCourseLesson>): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  await db
-    .update(courseLessons)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(courseLessons.id, lessonId));
+  const { error } = await supabaseAdmin
+    .from('courseLessons')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', lessonId);
+
+  if (error) {
+    console.error("[Database] Error updating lesson:", error);
+    throw error;
+  }
 }
 
-export async function getLessonById(lessonId: number) {
-  const db = await getDb();
-  if (!db) return null;
+export async function getLessonById(lessonId: number): Promise<CourseLesson | null> {
+  if (!supabaseAdmin) return null;
 
-  const result = await db
-    .select()
-    .from(courseLessons)
-    .where(eq(courseLessons.id, lessonId))
-    .limit(1);
-  return result[0] || null;
+  const { data, error } = await supabaseAdmin
+    .from('courseLessons')
+    .select('*')
+    .eq('id', lessonId)
+    .single();
+
+  if (error) return null;
+  return data as CourseLesson;
 }
 
-export async function deleteLesson(lessonId: number, moduleId: number, courseId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function deleteLesson(lessonId: number, moduleId: number, courseId: number): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
   // Delete progress
-  await db.delete(lessonProgress).where(eq(lessonProgress.lessonId, lessonId));
+  await supabaseAdmin.from('lessonProgress').delete().eq('lessonId', lessonId);
 
   // Delete lesson
-  await db.delete(courseLessons).where(eq(courseLessons.id, lessonId));
+  await supabaseAdmin.from('courseLessons').delete().eq('id', lessonId);
 
   // Update counts
   await updateModuleLessonCount(moduleId);
   await updateCourseLessonCount(courseId);
 }
 
-export async function reorderLessons(moduleId: number, lessonIds: number[]) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function reorderLessons(moduleId: number, lessonIds: number[]): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
   for (let i = 0; i < lessonIds.length; i++) {
-    await db
-      .update(courseLessons)
-      .set({ orderIndex: i, updatedAt: new Date() })
-      .where(
-        and(
-          eq(courseLessons.id, lessonIds[i]),
-          eq(courseLessons.moduleId, moduleId)
-        )
-      );
+    await supabaseAdmin
+      .from('courseLessons')
+      .update({
+        orderIndex: i,
+        updatedAt: new Date().toISOString(),
+      })
+      .match({ id: lessonIds[i], moduleId });
   }
 }
 
-async function updateModuleLessonCount(moduleId: number) {
-  const db = await getDb();
-  if (!db) return;
+async function updateModuleLessonCount(moduleId: number): Promise<void> {
+  if (!supabaseAdmin) return;
 
-  const lessons = await db
-    .select({
-      count: sql<number>`count(*)`,
-      duration: sql<number>`COALESCE(SUM(${courseLessons.videoDurationSeconds}), 0)`
-    })
-    .from(courseLessons)
-    .where(eq(courseLessons.moduleId, moduleId));
+  const { data: lessons } = await supabaseAdmin
+    .from('courseLessons')
+    .select('videoDurationSeconds')
+    .eq('moduleId', moduleId);
 
-  await db
-    .update(courseModules)
-    .set({
-      lessonsCount: lessons[0]?.count || 0,
-      durationMinutes: Math.ceil((lessons[0]?.duration || 0) / 60),
-      updatedAt: new Date(),
+  const count = lessons?.length || 0;
+  const duration = (lessons || []).reduce((sum, l) => sum + (l.videoDurationSeconds || 0), 0);
+
+  await supabaseAdmin
+    .from('courseModules')
+    .update({
+      lessonsCount: count,
+      durationMinutes: Math.ceil(duration / 60),
+      updatedAt: new Date().toISOString(),
     })
-    .where(eq(courseModules.id, moduleId));
+    .eq('id', moduleId);
 }
 
-async function updateCourseLessonCount(courseId: number) {
-  const db = await getDb();
-  if (!db) return;
+async function updateCourseLessonCount(courseId: number): Promise<void> {
+  if (!supabaseAdmin) return;
 
-  const lessons = await db
-    .select({
-      count: sql<number>`count(*)`,
-      duration: sql<number>`COALESCE(SUM(${courseLessons.videoDurationSeconds}), 0)`
-    })
-    .from(courseLessons)
-    .where(eq(courseLessons.courseId, courseId));
+  const { data: lessons } = await supabaseAdmin
+    .from('courseLessons')
+    .select('videoDurationSeconds')
+    .eq('courseId', courseId);
 
-  await db
-    .update(courses)
-    .set({
-      lessonsCount: lessons[0]?.count || 0,
-      totalDurationMinutes: Math.ceil((lessons[0]?.duration || 0) / 60),
-      updatedAt: new Date(),
+  const count = lessons?.length || 0;
+  const duration = (lessons || []).reduce((sum, l) => sum + (l.videoDurationSeconds || 0), 0);
+
+  await supabaseAdmin
+    .from('courses')
+    .update({
+      lessonsCount: count,
+      totalDurationMinutes: Math.ceil(duration / 60),
+      updatedAt: new Date().toISOString(),
     })
-    .where(eq(courses.id, courseId));
+    .eq('id', courseId);
 }
 
 // ============================================
 // ENROLLMENT FUNCTIONS
 // ============================================
 
-export async function createEnrollment(data: InsertCourseEnrollment) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function createEnrollment(data: InsertCourseEnrollment): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  const result = await db
-    .insert(courseEnrollments)
-    .values(data)
-    .returning({ id: courseEnrollments.id });
+  const { data: result, error } = await supabaseAdmin
+    .from('courseEnrollments')
+    .insert({
+      ...data,
+      progressPercent: 0,
+      completedLessonsCount: 0,
+      lastAccessedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating enrollment:", error);
+    throw error;
+  }
 
   // Increment students count
-  await db
-    .update(courses)
-    .set({
-      studentsCount: sql`${courses.studentsCount} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(courses.id, data.courseId));
+  const { data: course } = await supabaseAdmin
+    .from('courses')
+    .select('studentsCount')
+    .eq('id', data.courseId)
+    .single();
 
-  return result[0].id;
+  if (course) {
+    await supabaseAdmin
+      .from('courses')
+      .update({
+        studentsCount: (course.studentsCount || 0) + 1,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', data.courseId);
+  }
+
+  return result.id;
 }
 
-export async function getEnrollment(courseId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return null;
+export async function getEnrollment(courseId: number, userId: number): Promise<CourseEnrollment | null> {
+  if (!supabaseAdmin) return null;
 
-  const result = await db
-    .select()
-    .from(courseEnrollments)
-    .where(
-      and(
-        eq(courseEnrollments.courseId, courseId),
-        eq(courseEnrollments.userId, userId)
-      )
-    )
-    .limit(1);
-  return result[0] || null;
+  const { data, error } = await supabaseAdmin
+    .from('courseEnrollments')
+    .select('*')
+    .match({ courseId, userId })
+    .single();
+
+  if (error) return null;
+  return data as CourseEnrollment;
 }
 
 export async function getUserEnrollments(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  return await db
-    .select({
-      enrollment: courseEnrollments,
-      course: courses,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-      },
-    })
-    .from(courseEnrollments)
-    .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
-    .innerJoin(creatorProfiles, eq(courses.creatorId, creatorProfiles.id))
-    .where(eq(courseEnrollments.userId, userId))
-    .orderBy(desc(courseEnrollments.lastAccessedAt));
+  const { data: enrollments, error } = await supabaseAdmin
+    .from('courseEnrollments')
+    .select('*')
+    .eq('userId', userId)
+    .order('lastAccessedAt', { ascending: false });
+
+  if (error || !enrollments) return [];
+
+  const courseIds = enrollments.map(e => e.courseId);
+  const { data: courses } = await supabaseAdmin
+    .from('courses')
+    .select('*')
+    .in('id', courseIds);
+
+  const creatorIds = [...new Set((courses || []).map(c => c.creatorId))];
+  const { data: creators } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName, avatarUrl')
+    .in('id', creatorIds);
+
+  const coursesMap = new Map((courses || []).map(c => [c.id, c]));
+  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+
+  return enrollments.map(enrollment => {
+    const course = coursesMap.get(enrollment.courseId);
+    return {
+      enrollment,
+      course: course || null,
+      creator: course ? (creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null }) : null,
+    };
+  });
 }
 
-export async function updateEnrollmentProgress(enrollmentId: number, courseId: number) {
-  const db = await getDb();
-  if (!db) return;
+export async function updateEnrollmentProgress(enrollmentId: number, courseId: number): Promise<void> {
+  if (!supabaseAdmin) return;
 
-  // Calculate progress
-  const totalLessons = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(courseLessons)
-    .where(eq(courseLessons.courseId, courseId));
+  // Get total lessons
+  const { count: totalLessons } = await supabaseAdmin
+    .from('courseLessons')
+    .select('*', { count: 'exact', head: true })
+    .eq('courseId', courseId);
 
-  const completedLessons = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(lessonProgress)
-    .where(
-      and(
-        eq(lessonProgress.enrollmentId, enrollmentId),
-        eq(lessonProgress.isCompleted, true)
-      )
-    );
+  // Get completed lessons
+  const { count: completedLessons } = await supabaseAdmin
+    .from('lessonProgress')
+    .select('*', { count: 'exact', head: true })
+    .eq('enrollmentId', enrollmentId)
+    .eq('isCompleted', true);
 
-  const total = totalLessons[0]?.count || 0;
-  const completed = completedLessons[0]?.count || 0;
+  const total = totalLessons || 0;
+  const completed = completedLessons || 0;
   const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-  await db
-    .update(courseEnrollments)
-    .set({
+  await supabaseAdmin
+    .from('courseEnrollments')
+    .update({
       progressPercent: progress,
       completedLessonsCount: completed,
-      lastAccessedAt: new Date(),
-      completedAt: progress === 100 ? new Date() : null,
-      updatedAt: new Date(),
+      lastAccessedAt: new Date().toISOString(),
+      completedAt: progress === 100 ? new Date().toISOString() : null,
+      updatedAt: new Date().toISOString(),
     })
-    .where(eq(courseEnrollments.id, enrollmentId));
+    .eq('id', enrollmentId);
 }
 
 // ============================================
@@ -516,232 +787,288 @@ export async function updateLessonProgress(
   userId: number,
   enrollmentId: number,
   data: { watchedSeconds?: number; isCompleted?: boolean }
-) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  const existing = await db
-    .select()
-    .from(lessonProgress)
-    .where(
-      and(
-        eq(lessonProgress.lessonId, lessonId),
-        eq(lessonProgress.userId, userId)
-      )
-    )
-    .limit(1);
+  const { data: existing } = await supabaseAdmin
+    .from('lessonProgress')
+    .select('*')
+    .match({ lessonId, userId })
+    .single();
 
-  if (existing[0]) {
-    await db
-      .update(lessonProgress)
-      .set({
+  if (existing) {
+    await supabaseAdmin
+      .from('lessonProgress')
+      .update({
         ...data,
-        completedAt: data.isCompleted ? new Date() : null,
-        updatedAt: new Date(),
+        completedAt: data.isCompleted ? new Date().toISOString() : null,
+        updatedAt: new Date().toISOString(),
       })
-      .where(eq(lessonProgress.id, existing[0].id));
+      .eq('id', existing.id);
   } else {
-    await db.insert(lessonProgress).values({
-      lessonId,
-      userId,
-      enrollmentId,
-      watchedSeconds: data.watchedSeconds || 0,
-      isCompleted: data.isCompleted || false,
-      completedAt: data.isCompleted ? new Date() : null,
-    });
+    await supabaseAdmin
+      .from('lessonProgress')
+      .insert({
+        lessonId,
+        userId,
+        enrollmentId,
+        watchedSeconds: data.watchedSeconds || 0,
+        isCompleted: data.isCompleted || false,
+        completedAt: data.isCompleted ? new Date().toISOString() : null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
   }
 
-  // Get courseId from lesson
+  // Get courseId from lesson and update enrollment
   const lesson = await getLessonById(lessonId);
   if (lesson) {
     await updateEnrollmentProgress(enrollmentId, lesson.courseId);
   }
 }
 
-export async function getLessonProgress(lessonId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return null;
+export async function getLessonProgress(lessonId: number, userId: number): Promise<LessonProgress | null> {
+  if (!supabaseAdmin) return null;
 
-  const result = await db
-    .select()
-    .from(lessonProgress)
-    .where(
-      and(
-        eq(lessonProgress.lessonId, lessonId),
-        eq(lessonProgress.userId, userId)
-      )
-    )
-    .limit(1);
-  return result[0] || null;
+  const { data, error } = await supabaseAdmin
+    .from('lessonProgress')
+    .select('*')
+    .match({ lessonId, userId })
+    .single();
+
+  if (error) return null;
+  return data as LessonProgress;
 }
 
 export async function getCourseProgress(enrollmentId: number) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  return await db
-    .select({
-      lesson: courseLessons,
-      progress: lessonProgress,
-    })
-    .from(courseLessons)
-    .leftJoin(
-      lessonProgress,
-      and(
-        eq(lessonProgress.lessonId, courseLessons.id),
-        eq(lessonProgress.enrollmentId, enrollmentId)
-      )
-    )
-    .orderBy(asc(courseLessons.orderIndex));
+  // Get enrollment to get courseId
+  const { data: enrollment } = await supabaseAdmin
+    .from('courseEnrollments')
+    .select('courseId')
+    .eq('id', enrollmentId)
+    .single();
+
+  if (!enrollment) return [];
+
+  const { data: lessons } = await supabaseAdmin
+    .from('courseLessons')
+    .select('*')
+    .eq('courseId', enrollment.courseId)
+    .order('orderIndex', { ascending: true });
+
+  if (!lessons) return [];
+
+  const lessonIds = lessons.map(l => l.id);
+  const { data: progressRecords } = await supabaseAdmin
+    .from('lessonProgress')
+    .select('*')
+    .eq('enrollmentId', enrollmentId)
+    .in('lessonId', lessonIds);
+
+  const progressMap = new Map((progressRecords || []).map(p => [p.lessonId, p]));
+
+  return lessons.map(lesson => ({
+    lesson,
+    progress: progressMap.get(lesson.id) || null,
+  }));
 }
 
 // ============================================
 // REVIEW FUNCTIONS
 // ============================================
 
-export async function createReview(data: InsertCourseReview) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function createReview(data: InsertCourseReview): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  const result = await db
-    .insert(courseReviews)
-    .values({ ...data, isVerified: true })
-    .returning({ id: courseReviews.id });
+  const { data: result, error } = await supabaseAdmin
+    .from('courseReviews')
+    .insert({
+      ...data,
+      isVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating review:", error);
+    throw error;
+  }
 
   // Update course rating
   await updateCourseRating(data.courseId);
 
-  return result[0].id;
+  return result.id;
 }
 
-export async function updateReview(reviewId: number, data: { rating?: number; title?: string; content?: string }) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function updateReview(reviewId: number, data: { rating?: number; title?: string; content?: string }): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  await db
-    .update(courseReviews)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(courseReviews.id, reviewId));
+  const { error } = await supabaseAdmin
+    .from('courseReviews')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', reviewId);
 
-  const review = await db
-    .select({ courseId: courseReviews.courseId })
-    .from(courseReviews)
-    .where(eq(courseReviews.id, reviewId))
-    .limit(1);
+  if (error) {
+    console.error("[Database] Error updating review:", error);
+    throw error;
+  }
 
-  if (review[0]) {
-    await updateCourseRating(review[0].courseId);
+  // Get courseId and update rating
+  const { data: review } = await supabaseAdmin
+    .from('courseReviews')
+    .select('courseId')
+    .eq('id', reviewId)
+    .single();
+
+  if (review) {
+    await updateCourseRating(review.courseId);
   }
 }
 
 export async function getCourseReviews(courseId: number, limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  return await db
-    .select({
-      review: courseReviews,
-      user: {
-        id: users.id,
-        name: users.name,
-      },
-    })
-    .from(courseReviews)
-    .innerJoin(users, eq(courseReviews.userId, users.id))
-    .where(eq(courseReviews.courseId, courseId))
-    .orderBy(desc(courseReviews.createdAt))
-    .limit(limit)
-    .offset(offset);
+  const { data: reviews, error } = await supabaseAdmin
+    .from('courseReviews')
+    .select('*')
+    .eq('courseId', courseId)
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error || !reviews) return [];
+
+  const userIds = [...new Set(reviews.map(r => r.userId))];
+  const { data: users } = await supabaseAdmin
+    .from('users')
+    .select('id, name')
+    .in('id', userIds);
+
+  const usersMap = new Map((users || []).map(u => [u.id, u]));
+
+  return reviews.map(review => ({
+    review,
+    user: usersMap.get(review.userId) || { id: review.userId, name: null },
+  }));
 }
 
-async function updateCourseRating(courseId: number) {
-  const db = await getDb();
-  if (!db) return;
+async function updateCourseRating(courseId: number): Promise<void> {
+  if (!supabaseAdmin) return;
 
-  const reviews = await db
-    .select({
-      avgRating: sql<number>`AVG(${courseReviews.rating})`,
-      count: sql<number>`COUNT(*)`,
-    })
-    .from(courseReviews)
-    .where(eq(courseReviews.courseId, courseId));
+  const { data: reviews } = await supabaseAdmin
+    .from('courseReviews')
+    .select('rating')
+    .eq('courseId', courseId);
 
-  await db
-    .update(courses)
-    .set({
-      averageRating: String(reviews[0]?.avgRating?.toFixed(2) || "0"),
-      reviewsCount: reviews[0]?.count || 0,
-      updatedAt: new Date(),
+  const count = reviews?.length || 0;
+  const avgRating = count > 0
+    ? (reviews!.reduce((sum, r) => sum + r.rating, 0) / count).toFixed(2)
+    : "0";
+
+  await supabaseAdmin
+    .from('courses')
+    .update({
+      averageRating: avgRating,
+      reviewsCount: count,
+      updatedAt: new Date().toISOString(),
     })
-    .where(eq(courses.id, courseId));
+    .eq('id', courseId);
 }
 
 // ============================================
 // DIGITAL PRODUCTS FUNCTIONS
 // ============================================
 
-export async function createDigitalProduct(data: InsertDigitalProduct) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function createDigitalProduct(data: InsertDigitalProduct): Promise<number> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  const result = await db
-    .insert(digitalProducts)
-    .values(data)
-    .returning({ id: digitalProducts.id });
-  return result[0].id;
+  const { data: result, error } = await supabaseAdmin
+    .from('digitalProducts')
+    .insert({
+      ...data,
+      status: data.status || 'draft',
+      salesCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error("[Database] Error creating digital product:", error);
+    throw error;
+  }
+
+  return result.id;
 }
 
-export async function updateDigitalProduct(productId: number, data: Partial<InsertDigitalProduct>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function updateDigitalProduct(productId: number, data: Partial<InsertDigitalProduct>): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  await db
-    .update(digitalProducts)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(digitalProducts.id, productId));
+  const { error } = await supabaseAdmin
+    .from('digitalProducts')
+    .update({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq('id', productId);
+
+  if (error) {
+    console.error("[Database] Error updating digital product:", error);
+    throw error;
+  }
 }
 
-export async function deleteDigitalProduct(productId: number, creatorId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function deleteDigitalProduct(productId: number, creatorId: number): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
   // Delete purchases
-  await db.delete(digitalPurchases).where(eq(digitalPurchases.productId, productId));
+  await supabaseAdmin.from('digitalPurchases').delete().eq('productId', productId);
 
   // Delete product
-  await db.delete(digitalProducts).where(eq(digitalProducts.id, productId));
+  await supabaseAdmin.from('digitalProducts').delete().eq('id', productId);
 }
 
-export async function getDigitalProductById(productId: number) {
-  const db = await getDb();
-  if (!db) return null;
+export async function getDigitalProductById(productId: number): Promise<DigitalProduct | null> {
+  if (!supabaseAdmin) return null;
 
-  const result = await db
-    .select()
-    .from(digitalProducts)
-    .where(eq(digitalProducts.id, productId))
-    .limit(1);
-  return result[0] || null;
+  const { data, error } = await supabaseAdmin
+    .from('digitalProducts')
+    .select('*')
+    .eq('id', productId)
+    .single();
+
+  if (error) return null;
+  return data as DigitalProduct;
 }
 
 export async function getDigitalProductBySlug(slug: string) {
-  const db = await getDb();
-  if (!db) return null;
+  if (!supabaseAdmin) return null;
 
-  const result = await db
-    .select({
-      product: digitalProducts,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-      },
-    })
-    .from(digitalProducts)
-    .innerJoin(creatorProfiles, eq(digitalProducts.creatorId, creatorProfiles.id))
-    .where(eq(digitalProducts.slug, slug))
-    .limit(1);
-  return result[0] || null;
+  const { data: product, error } = await supabaseAdmin
+    .from('digitalProducts')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  if (error || !product) return null;
+
+  const { data: creator } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName, avatarUrl')
+    .eq('id', product.creatorId)
+    .single();
+
+  return {
+    product,
+    creator: creator || { id: product.creatorId, displayName: 'Unknown', avatarUrl: null },
+  };
 }
 
 export async function getPublishedDigitalProducts(limit = 20, offset = 0) {
@@ -754,12 +1081,7 @@ export async function getPublishedDigitalProducts(limit = 20, offset = 0) {
     .order('createdAt', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (error) {
-    console.error("Error fetching digital products:", error);
-    return [];
-  }
-
-  if (!products || products.length === 0) return [];
+  if (error || !products) return [];
 
   const creatorIds = [...new Set(products.map(p => p.creatorId))];
   const { data: creators } = await supabaseAdmin
@@ -775,15 +1097,17 @@ export async function getPublishedDigitalProducts(limit = 20, offset = 0) {
   }));
 }
 
-export async function getCreatorDigitalProducts(creatorId: number) {
-  const db = await getDb();
-  if (!db) return [];
+export async function getCreatorDigitalProducts(creatorId: number): Promise<DigitalProduct[]> {
+  if (!supabaseAdmin) return [];
 
-  return await db
-    .select()
-    .from(digitalProducts)
-    .where(eq(digitalProducts.creatorId, creatorId))
-    .orderBy(desc(digitalProducts.createdAt));
+  const { data, error } = await supabaseAdmin
+    .from('digitalProducts')
+    .select('*')
+    .eq('creatorId', creatorId)
+    .order('createdAt', { ascending: false });
+
+  if (error) return [];
+  return (data || []) as DigitalProduct[];
 }
 
 export async function createDigitalPurchase(
@@ -791,73 +1115,102 @@ export async function createDigitalPurchase(
   userId: number,
   pricePaidCents: number,
   orderId?: number
-) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  await db.insert(digitalPurchases).values({
-    productId,
-    userId,
-    pricePaidCents,
-    orderId,
-  });
+  await supabaseAdmin
+    .from('digitalPurchases')
+    .insert({
+      productId,
+      userId,
+      pricePaidCents,
+      orderId: orderId || null,
+      downloadCount: 0,
+      createdAt: new Date().toISOString(),
+    });
 
   // Increment sales count
-  await db
-    .update(digitalProducts)
-    .set({
-      salesCount: sql`${digitalProducts.salesCount} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(digitalProducts.id, productId));
+  const { data: product } = await supabaseAdmin
+    .from('digitalProducts')
+    .select('salesCount')
+    .eq('id', productId)
+    .single();
+
+  if (product) {
+    await supabaseAdmin
+      .from('digitalProducts')
+      .update({
+        salesCount: (product.salesCount || 0) + 1,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', productId);
+  }
 }
 
 export async function getUserDigitalPurchases(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  return await db
-    .select({
-      purchase: digitalPurchases,
-      product: digitalProducts,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-      },
-    })
-    .from(digitalPurchases)
-    .innerJoin(digitalProducts, eq(digitalPurchases.productId, digitalProducts.id))
-    .innerJoin(creatorProfiles, eq(digitalProducts.creatorId, creatorProfiles.id))
-    .where(eq(digitalPurchases.userId, userId))
-    .orderBy(desc(digitalPurchases.createdAt));
+  const { data: purchases, error } = await supabaseAdmin
+    .from('digitalPurchases')
+    .select('*')
+    .eq('userId', userId)
+    .order('createdAt', { ascending: false });
+
+  if (error || !purchases) return [];
+
+  const productIds = purchases.map(p => p.productId);
+  const { data: products } = await supabaseAdmin
+    .from('digitalProducts')
+    .select('*')
+    .in('id', productIds);
+
+  const creatorIds = [...new Set((products || []).map(p => p.creatorId))];
+  const { data: creators } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName')
+    .in('id', creatorIds);
+
+  const productsMap = new Map((products || []).map(p => [p.id, p]));
+  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+
+  return purchases.map(purchase => {
+    const product = productsMap.get(purchase.productId);
+    return {
+      purchase,
+      product: product || null,
+      creator: product ? (creatorsMap.get(product.creatorId) || { id: product.creatorId, displayName: 'Unknown' }) : null,
+    };
+  });
 }
 
-export async function hasUserPurchasedProduct(productId: number, userId: number) {
-  const db = await getDb();
-  if (!db) return false;
+export async function hasUserPurchasedProduct(productId: number, userId: number): Promise<boolean> {
+  if (!supabaseAdmin) return false;
 
-  const result = await db
-    .select()
-    .from(digitalPurchases)
-    .where(
-      and(
-        eq(digitalPurchases.productId, productId),
-        eq(digitalPurchases.userId, userId)
-      )
-    )
-    .limit(1);
-  return result.length > 0;
+  const { data, error } = await supabaseAdmin
+    .from('digitalPurchases')
+    .select('id')
+    .match({ productId, userId })
+    .single();
+
+  return !error && !!data;
 }
 
-export async function incrementDownloadCount(purchaseId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function incrementDownloadCount(purchaseId: number): Promise<void> {
+  if (!supabaseAdmin) throw new Error("Database not available");
 
-  await db
-    .update(digitalPurchases)
-    .set({
-      downloadCount: sql`${digitalPurchases.downloadCount} + 1`,
-      lastDownloadedAt: new Date(),
-    })
-    .where(eq(digitalPurchases.id, purchaseId));
+  const { data: purchase } = await supabaseAdmin
+    .from('digitalPurchases')
+    .select('downloadCount')
+    .eq('id', purchaseId)
+    .single();
+
+  if (purchase) {
+    await supabaseAdmin
+      .from('digitalPurchases')
+      .update({
+        downloadCount: (purchase.downloadCount || 0) + 1,
+        lastDownloadedAt: new Date().toISOString(),
+      })
+      .eq('id', purchaseId);
+  }
 }
