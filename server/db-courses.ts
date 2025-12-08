@@ -1,5 +1,6 @@
 import { eq, desc, and, sql, inArray, asc } from "drizzle-orm";
 import { getDb } from "./db";
+import { supabaseAdmin } from "./supabase";
 import {
   courses,
   courseModules,
@@ -744,24 +745,34 @@ export async function getDigitalProductBySlug(slug: string) {
 }
 
 export async function getPublishedDigitalProducts(limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
+  if (!supabaseAdmin) return [];
 
-  return await db
-    .select({
-      product: digitalProducts,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-      },
-    })
-    .from(digitalProducts)
-    .innerJoin(creatorProfiles, eq(digitalProducts.creatorId, creatorProfiles.id))
-    .where(eq(digitalProducts.status, "published"))
-    .orderBy(desc(digitalProducts.createdAt))
-    .limit(limit)
-    .offset(offset);
+  const { data: products, error } = await supabaseAdmin
+    .from('digitalProducts')
+    .select('*')
+    .eq('status', 'published')
+    .order('createdAt', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Error fetching digital products:", error);
+    return [];
+  }
+
+  if (!products || products.length === 0) return [];
+
+  const creatorIds = [...new Set(products.map(p => p.creatorId))];
+  const { data: creators } = await supabaseAdmin
+    .from('creatorProfiles')
+    .select('id, displayName, avatarUrl')
+    .in('id', creatorIds);
+
+  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+
+  return products.map(product => ({
+    product,
+    creator: creatorsMap.get(product.creatorId) || { id: product.creatorId, displayName: 'Unknown', avatarUrl: null },
+  }));
 }
 
 export async function getCreatorDigitalProducts(creatorId: number) {
