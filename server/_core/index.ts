@@ -7,6 +7,8 @@ import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { appRouter } from "../routers";
+import * as db from "../db";
+import { sql } from "drizzle-orm";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -82,6 +84,33 @@ async function startServer() {
 
   // Apply auth limiter to auth-related endpoints
   app.use("/api/trpc/auth", authLimiter);
+
+  // Health Check Endpoint (Bypass Rate Limits for diagnostics if needed, or keep it under general)
+  app.get("/api/health", async (_req, res) => {
+    try {
+      const database = await db.getDb();
+      if (!database) {
+        throw new Error("getDb() returned null");
+      }
+      // Simple query to verify connection
+      await database.execute(sql`SELECT 1`);
+
+      res.json({
+        status: "ok",
+        database: "connected",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("[Health] Database check failed:", error);
+      res.status(500).json({
+        status: "error",
+        database: "disconnected",
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   app.use("/api", generalLimiter);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
