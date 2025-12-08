@@ -623,7 +623,15 @@ export const digitalProductsRouter = router({
       })
     )
     .query(async ({ input }) => {
-      return await getPublishedDigitalProducts(input.limit, input.offset);
+      try {
+        console.log("[API] Fetching published digital products...");
+        const result = await getPublishedDigitalProducts(input.limit, input.offset);
+        console.log(`[API] Found ${result.length} products.`);
+        return result;
+      } catch (err) {
+        console.error("[API] Error fetching digital products:", err);
+        throw err;
+      }
     }),
 
   // Get by slug
@@ -787,19 +795,19 @@ export const digitalProductsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const purchases = await getUserDigitalPurchases(ctx.user.id);
       const purchaseData = purchases.find(p => p.purchase.id === input.purchaseId);
-      
+
       if (!purchaseData) {
         throw new Error('Compra não encontrada');
       }
-      
+
       if (!purchaseData.product.fileUrl) {
         throw new Error('Arquivo não disponível');
       }
-      
+
       await incrementDownloadCount(input.purchaseId);
-      
+
       // Return download URL from Supabase Storage
-      return { 
+      return {
         success: true,
         downloadUrl: purchaseData.product.fileUrl
       };

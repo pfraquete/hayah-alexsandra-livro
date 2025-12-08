@@ -9,6 +9,7 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
+      console.log("[Database] Connecting to Postgres...");
       // Configure connection pooling for production/serverless environments
       const client = postgres(process.env.DATABASE_URL, {
         max: 10,               // Limit max connections to usage
@@ -18,8 +19,9 @@ export async function getDb() {
         ssl: 'require',
       });
       _db = drizzle(client);
+      console.log("[Database] Connection pool initialized.");
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.error("[Database] Failed to connect:", error);
       _db = null;
     }
   }

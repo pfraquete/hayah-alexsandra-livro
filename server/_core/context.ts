@@ -22,13 +22,17 @@ export async function createContext(
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith("Bearer ")) {
       const accessToken = authHeader.substring(7);
+      // DEBUG LOG
+      console.log(`[Auth] Verifying token: ${accessToken.substring(0, 10)}...`);
       const supabaseUser = await getSupabaseUser(accessToken);
 
       // STRICT AUTH: If a token is provided, it MUST be valid.
       // If verification fails, we throw to reject the request immediately (401).
       if (!supabaseUser) {
+        console.error("[Auth] Token validation failed. supabaseUser is null.");
         throw new Error("UNAUTHORIZED_INVALID_TOKEN");
       }
+      console.log(`[Auth] User verified: ${supabaseUser.id}`);
 
       if (supabaseUser) {
         // Get or create user in our database
