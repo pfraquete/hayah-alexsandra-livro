@@ -1,653 +1,12 @@
-var __defProp = Object.defineProperty;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
-};
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-
-// drizzle/schema.ts
-var schema_exports = {};
-__export(schema_exports, {
-  addresses: () => addresses,
-  commentLikes: () => commentLikes,
-  courseEnrollments: () => courseEnrollments,
-  courseLessons: () => courseLessons,
-  courseModules: () => courseModules,
-  courseReviews: () => courseReviews,
-  courseStatusEnum: () => courseStatusEnum,
-  courses: () => courses,
-  creatorProfiles: () => creatorProfiles,
-  creatorStatusEnum: () => creatorStatusEnum,
-  digitalProducts: () => digitalProducts,
-  digitalPurchases: () => digitalPurchases,
-  followers: () => followers,
-  lessonProgress: () => lessonProgress,
-  lessonTypeEnum: () => lessonTypeEnum,
-  notifications: () => notifications,
-  orderItems: () => orderItems,
-  orderStatusEnum: () => orderStatusEnum,
-  orders: () => orders,
-  paymentStatusEnum: () => paymentStatusEnum,
-  paymentTransactions: () => paymentTransactions,
-  postComments: () => postComments,
-  postLikes: () => postLikes,
-  postMedia: () => postMedia,
-  postVisibilityEnum: () => postVisibilityEnum,
-  posts: () => posts,
-  productTypeEnum: () => productTypeEnum,
-  products: () => products,
-  roleEnum: () => roleEnum,
-  shipmentStatusEnum: () => shipmentStatusEnum,
-  shipments: () => shipments,
-  users: () => users
-});
-import { integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, json, index, serial, unique } from "drizzle-orm/pg-core";
-var roleEnum, productTypeEnum, orderStatusEnum, shipmentStatusEnum, paymentStatusEnum, users, products, addresses, orders, orderItems, shipments, paymentTransactions, creatorStatusEnum, postVisibilityEnum, courseStatusEnum, lessonTypeEnum, creatorProfiles, followers, posts, postMedia, postLikes, postComments, commentLikes, courses, courseModules, courseLessons, courseEnrollments, lessonProgress, courseReviews, digitalProducts, digitalPurchases, notifications;
-var init_schema = __esm({
-  "drizzle/schema.ts"() {
-    "use strict";
-    roleEnum = pgEnum("role", ["user", "admin"]);
-    productTypeEnum = pgEnum("product_type", ["physical", "digital"]);
-    orderStatusEnum = pgEnum("order_status", [
-      "AGUARDANDO_PAGAMENTO",
-      "PAGO",
-      "EM_SEPARACAO",
-      "POSTADO",
-      "EM_TRANSITO",
-      "ENTREGUE",
-      "CANCELADO",
-      "REEMBOLSADO"
-    ]);
-    shipmentStatusEnum = pgEnum("shipment_status", [
-      "PENDENTE",
-      "ETIQUETA_GERADA",
-      "POSTADO",
-      "EM_TRANSITO",
-      "SAIU_PARA_ENTREGA",
-      "ENTREGUE",
-      "DEVOLVIDO"
-    ]);
-    paymentStatusEnum = pgEnum("payment_status", [
-      "pending",
-      "processing",
-      "authorized",
-      "paid",
-      "refunded",
-      "failed",
-      "canceled"
-    ]);
-    users = pgTable("users", {
-      /**
-       * Surrogate primary key. Auto-incremented numeric value managed by the database.
-       * Use this for relations between tables.
-       */
-      id: serial("id").primaryKey(),
-      /** Supabase Auth user ID. Unique per user. */
-      openId: varchar("openId", { length: 64 }).notNull().unique(),
-      name: text("name"),
-      email: varchar("email", { length: 320 }),
-      phone: varchar("phone", { length: 20 }),
-      cpf: varchar("cpf", { length: 14 }),
-      loginMethod: varchar("loginMethod", { length: 64 }),
-      role: roleEnum("role").default("user").notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-      lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-      active: boolean("active").default(true).notNull()
-    });
-    products = pgTable("products", {
-      id: serial("id").primaryKey(),
-      creatorId: integer("creatorId"),
-      productType: productTypeEnum("productType").default("physical").notNull(),
-      name: varchar("name", { length: 255 }).notNull(),
-      slug: varchar("slug", { length: 255 }).notNull().unique(),
-      description: text("description"),
-      priceCents: integer("priceCents").notNull(),
-      compareAtPriceCents: integer("compareAtPriceCents"),
-      // Physical product fields (optional for digital products)
-      stockQuantity: integer("stockQuantity").default(0),
-      weightGrams: integer("weightGrams"),
-      widthCm: decimal("widthCm", { precision: 5, scale: 2 }),
-      heightCm: decimal("heightCm", { precision: 5, scale: 2 }),
-      depthCm: decimal("depthCm", { precision: 5, scale: 2 }),
-      // Digital product fields (optional for physical products)
-      fileUrl: varchar("fileUrl", { length: 500 }),
-      fileType: varchar("fileType", { length: 50 }),
-      fileSizeBytes: integer("fileSizeBytes"),
-      imageUrl: varchar("imageUrl", { length: 500 }),
-      active: boolean("active").default(true).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      activeIdx: index("active_idx").on(table.active)
-    }));
-    addresses = pgTable("addresses", {
-      id: serial("id").primaryKey(),
-      userId: integer("userId").notNull(),
-      recipientName: varchar("recipientName", { length: 255 }).notNull(),
-      cep: varchar("cep", { length: 10 }).notNull(),
-      street: varchar("street", { length: 255 }).notNull(),
-      number: varchar("number", { length: 20 }).notNull(),
-      complement: varchar("complement", { length: 100 }),
-      district: varchar("district", { length: 100 }).notNull(),
-      city: varchar("city", { length: 100 }).notNull(),
-      state: varchar("state", { length: 2 }).notNull(),
-      isDefault: boolean("isDefault").default(false).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      userIdIdx: index("user_id_idx").on(table.userId)
-    }));
-    orders = pgTable("orders", {
-      id: serial("id").primaryKey(),
-      userId: integer("userId").notNull(),
-      addressId: integer("addressId"),
-      subtotalCents: integer("subtotalCents").notNull(),
-      shippingPriceCents: integer("shippingPriceCents").notNull(),
-      discountCents: integer("discountCents").default(0).notNull(),
-      totalCents: integer("totalCents").notNull(),
-      status: orderStatusEnum("status").default("AGUARDANDO_PAGAMENTO").notNull(),
-      paymentMethod: varchar("paymentMethod", { length: 50 }),
-      shippingAddress: json("shippingAddress"),
-      customerNotes: text("customerNotes"),
-      adminNotes: text("adminNotes"),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-      paidAt: timestamp("paidAt"),
-      shippedAt: timestamp("shippedAt"),
-      deliveredAt: timestamp("deliveredAt"),
-      cancelledAt: timestamp("cancelledAt")
-    }, (table) => ({
-      userIdIdx: index("orders_user_id_idx").on(table.userId),
-      statusIdx: index("orders_status_idx").on(table.status)
-    }));
-    orderItems = pgTable("orderItems", {
-      id: serial("id").primaryKey(),
-      orderId: integer("orderId").notNull(),
-      productId: integer("productId").notNull(),
-      quantity: integer("quantity").default(1).notNull(),
-      unitPriceCents: integer("unitPriceCents").notNull(),
-      totalPriceCents: integer("totalPriceCents").notNull(),
-      productName: varchar("productName", { length: 255 }).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull()
-    });
-    shipments = pgTable("shipments", {
-      id: serial("id").primaryKey(),
-      orderId: integer("orderId").notNull().unique(),
-      shippingMethod: varchar("shippingMethod", { length: 50 }).notNull(),
-      shippingPriceCents: integer("shippingPriceCents").notNull(),
-      trackingCode: varchar("trackingCode", { length: 50 }),
-      trackingUrl: varchar("trackingUrl", { length: 500 }),
-      status: shipmentStatusEnum("status").default("PENDENTE").notNull(),
-      labelUrl: varchar("labelUrl", { length: 500 }),
-      estimatedDeliveryDays: integer("estimatedDeliveryDays"),
-      postedAt: timestamp("postedAt"),
-      deliveredAt: timestamp("deliveredAt"),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    });
-    paymentTransactions = pgTable("paymentTransactions", {
-      id: serial("id").primaryKey(),
-      orderId: integer("orderId").notNull(),
-      externalId: varchar("externalId", { length: 100 }),
-      gateway: varchar("gateway", { length: 50 }).default("pagarme").notNull(),
-      method: varchar("method", { length: 50 }).notNull(),
-      amountCents: integer("amountCents").notNull(),
-      status: paymentStatusEnum("status").default("pending").notNull(),
-      gatewayResponse: json("gatewayResponse"),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    });
-    creatorStatusEnum = pgEnum("creator_status", [
-      "pending",
-      "approved",
-      "rejected",
-      "suspended"
-    ]);
-    postVisibilityEnum = pgEnum("post_visibility", [
-      "public",
-      "followers",
-      "private"
-    ]);
-    courseStatusEnum = pgEnum("course_status", [
-      "draft",
-      "published",
-      "archived"
-    ]);
-    lessonTypeEnum = pgEnum("lesson_type", [
-      "video",
-      "text",
-      "quiz",
-      "download"
-    ]);
-    creatorProfiles = pgTable("creatorProfiles", {
-      id: serial("id").primaryKey(),
-      userId: integer("userId").notNull().unique(),
-      displayName: varchar("displayName", { length: 100 }).notNull(),
-      bio: text("bio"),
-      avatarUrl: varchar("avatarUrl", { length: 500 }),
-      coverUrl: varchar("coverUrl", { length: 500 }),
-      instagram: varchar("instagram", { length: 100 }),
-      youtube: varchar("youtube", { length: 100 }),
-      website: varchar("website", { length: 255 }),
-      status: creatorStatusEnum("status").default("pending").notNull(),
-      followersCount: integer("followersCount").default(0).notNull(),
-      postsCount: integer("postsCount").default(0).notNull(),
-      coursesCount: integer("coursesCount").default(0).notNull(),
-      totalEarningsCents: integer("totalEarningsCents").default(0).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      userIdIdx: index("creator_user_id_idx").on(table.userId),
-      statusIdx: index("creator_status_idx").on(table.status)
-    }));
-    followers = pgTable("followers", {
-      id: serial("id").primaryKey(),
-      followerId: integer("followerId").notNull(),
-      followingId: integer("followingId").notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull()
-    }, (table) => ({
-      followerIdx: index("follower_id_idx").on(table.followerId),
-      followingIdx: index("following_id_idx").on(table.followingId),
-      uniqueFollow: unique("unique_follow").on(table.followerId, table.followingId)
-    }));
-    posts = pgTable("posts", {
-      id: serial("id").primaryKey(),
-      creatorId: integer("creatorId").notNull(),
-      content: text("content"),
-      visibility: postVisibilityEnum("visibility").default("public").notNull(),
-      likesCount: integer("likesCount").default(0).notNull(),
-      commentsCount: integer("commentsCount").default(0).notNull(),
-      sharesCount: integer("sharesCount").default(0).notNull(),
-      isPinned: boolean("isPinned").default(false).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      creatorIdx: index("post_creator_id_idx").on(table.creatorId),
-      createdAtIdx: index("post_created_at_idx").on(table.createdAt),
-      visibilityIdx: index("post_visibility_idx").on(table.visibility)
-    }));
-    postMedia = pgTable("postMedia", {
-      id: serial("id").primaryKey(),
-      postId: integer("postId").notNull(),
-      mediaUrl: varchar("mediaUrl", { length: 500 }).notNull(),
-      mediaType: varchar("mediaType", { length: 20 }).notNull(),
-      // 'image' | 'video'
-      thumbnailUrl: varchar("thumbnailUrl", { length: 500 }),
-      orderIndex: integer("orderIndex").default(0).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull()
-    }, (table) => ({
-      postIdx: index("media_post_id_idx").on(table.postId)
-    }));
-    postLikes = pgTable("postLikes", {
-      id: serial("id").primaryKey(),
-      postId: integer("postId").notNull(),
-      userId: integer("userId").notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull()
-    }, (table) => ({
-      postIdx: index("like_post_id_idx").on(table.postId),
-      userIdx: index("like_user_id_idx").on(table.userId),
-      uniqueLike: unique("unique_like").on(table.postId, table.userId)
-    }));
-    postComments = pgTable("postComments", {
-      id: serial("id").primaryKey(),
-      postId: integer("postId").notNull(),
-      userId: integer("userId").notNull(),
-      parentId: integer("parentId"),
-      // For replies
-      content: text("content").notNull(),
-      likesCount: integer("likesCount").default(0).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      postIdx: index("comment_post_id_idx").on(table.postId),
-      userIdx: index("comment_user_id_idx").on(table.userId),
-      parentIdx: index("comment_parent_id_idx").on(table.parentId)
-    }));
-    commentLikes = pgTable("commentLikes", {
-      id: serial("id").primaryKey(),
-      commentId: integer("commentId").notNull(),
-      userId: integer("userId").notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull()
-    }, (table) => ({
-      commentIdx: index("clike_comment_id_idx").on(table.commentId),
-      userIdx: index("clike_user_id_idx").on(table.userId),
-      uniqueCommentLike: unique("unique_comment_like").on(table.commentId, table.userId)
-    }));
-    courses = pgTable("courses", {
-      id: serial("id").primaryKey(),
-      creatorId: integer("creatorId").notNull(),
-      title: varchar("title", { length: 255 }).notNull(),
-      slug: varchar("slug", { length: 255 }).notNull().unique(),
-      description: text("description"),
-      shortDescription: varchar("shortDescription", { length: 500 }),
-      thumbnailUrl: varchar("thumbnailUrl", { length: 500 }),
-      previewVideoUrl: varchar("previewVideoUrl", { length: 500 }),
-      priceCents: integer("priceCents").notNull(),
-      compareAtPriceCents: integer("compareAtPriceCents"),
-      status: courseStatusEnum("status").default("draft").notNull(),
-      totalDurationMinutes: integer("totalDurationMinutes").default(0).notNull(),
-      lessonsCount: integer("lessonsCount").default(0).notNull(),
-      studentsCount: integer("studentsCount").default(0).notNull(),
-      averageRating: decimal("averageRating", { precision: 3, scale: 2 }).default("0"),
-      reviewsCount: integer("reviewsCount").default(0).notNull(),
-      isFeatured: boolean("isFeatured").default(false).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-      publishedAt: timestamp("publishedAt")
-    }, (table) => ({
-      creatorIdx: index("course_creator_id_idx").on(table.creatorId),
-      slugIdx: index("course_slug_idx").on(table.slug),
-      statusIdx: index("course_status_idx").on(table.status)
-    }));
-    courseModules = pgTable("courseModules", {
-      id: serial("id").primaryKey(),
-      courseId: integer("courseId").notNull(),
-      title: varchar("title", { length: 255 }).notNull(),
-      description: text("description"),
-      orderIndex: integer("orderIndex").default(0).notNull(),
-      lessonsCount: integer("lessonsCount").default(0).notNull(),
-      durationMinutes: integer("durationMinutes").default(0).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      courseIdx: index("module_course_id_idx").on(table.courseId)
-    }));
-    courseLessons = pgTable("courseLessons", {
-      id: serial("id").primaryKey(),
-      moduleId: integer("moduleId").notNull(),
-      courseId: integer("courseId").notNull(),
-      title: varchar("title", { length: 255 }).notNull(),
-      description: text("description"),
-      lessonType: lessonTypeEnum("lessonType").default("video").notNull(),
-      videoUrl: varchar("videoUrl", { length: 500 }),
-      videoDurationSeconds: integer("videoDurationSeconds"),
-      content: text("content"),
-      // For text lessons
-      downloadUrl: varchar("downloadUrl", { length: 500 }),
-      // For downloadable materials
-      orderIndex: integer("orderIndex").default(0).notNull(),
-      isFree: boolean("isFree").default(false).notNull(),
-      // Free preview lessons
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      moduleIdx: index("lesson_module_id_idx").on(table.moduleId),
-      courseIdx: index("lesson_course_id_idx").on(table.courseId)
-    }));
-    courseEnrollments = pgTable("courseEnrollments", {
-      id: serial("id").primaryKey(),
-      courseId: integer("courseId").notNull(),
-      userId: integer("userId").notNull(),
-      orderId: integer("orderId"),
-      // Link to payment order if paid
-      pricePaidCents: integer("pricePaidCents").notNull(),
-      progressPercent: integer("progressPercent").default(0).notNull(),
-      completedLessonsCount: integer("completedLessonsCount").default(0).notNull(),
-      lastAccessedAt: timestamp("lastAccessedAt"),
-      completedAt: timestamp("completedAt"),
-      certificateUrl: varchar("certificateUrl", { length: 500 }),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      courseIdx: index("enrollment_course_id_idx").on(table.courseId),
-      userIdx: index("enrollment_user_id_idx").on(table.userId),
-      uniqueEnrollment: unique("unique_enrollment").on(table.courseId, table.userId)
-    }));
-    lessonProgress = pgTable("lessonProgress", {
-      id: serial("id").primaryKey(),
-      lessonId: integer("lessonId").notNull(),
-      userId: integer("userId").notNull(),
-      enrollmentId: integer("enrollmentId").notNull(),
-      isCompleted: boolean("isCompleted").default(false).notNull(),
-      watchedSeconds: integer("watchedSeconds").default(0).notNull(),
-      completedAt: timestamp("completedAt"),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      lessonIdx: index("progress_lesson_id_idx").on(table.lessonId),
-      userIdx: index("progress_user_id_idx").on(table.userId),
-      enrollmentIdx: index("progress_enrollment_id_idx").on(table.enrollmentId),
-      uniqueProgress: unique("unique_progress").on(table.lessonId, table.userId)
-    }));
-    courseReviews = pgTable("courseReviews", {
-      id: serial("id").primaryKey(),
-      courseId: integer("courseId").notNull(),
-      userId: integer("userId").notNull(),
-      enrollmentId: integer("enrollmentId").notNull(),
-      rating: integer("rating").notNull(),
-      // 1-5
-      title: varchar("title", { length: 255 }),
-      content: text("content"),
-      isVerified: boolean("isVerified").default(false).notNull(),
-      // Verified purchase
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull()
-    }, (table) => ({
-      courseIdx: index("review_course_id_idx").on(table.courseId),
-      userIdx: index("review_user_id_idx").on(table.userId),
-      uniqueReview: unique("unique_review").on(table.courseId, table.userId)
-    }));
-    digitalProducts = pgTable("digitalProducts", {
-      id: serial("id").primaryKey(),
-      creatorId: integer("creatorId").notNull(),
-      title: varchar("title", { length: 255 }).notNull(),
-      slug: varchar("slug", { length: 255 }).notNull().unique(),
-      description: text("description"),
-      shortDescription: varchar("shortDescription", { length: 500 }),
-      thumbnailUrl: varchar("thumbnailUrl", { length: 500 }),
-      previewUrl: varchar("previewUrl", { length: 500 }),
-      // Preview file
-      fileUrl: varchar("fileUrl", { length: 500 }).notNull(),
-      // Main file
-      fileType: varchar("fileType", { length: 50 }).notNull(),
-      // pdf, epub, etc.
-      fileSizeBytes: integer("fileSizeBytes"),
-      priceCents: integer("priceCents").notNull(),
-      compareAtPriceCents: integer("compareAtPriceCents"),
-      status: courseStatusEnum("status").default("draft").notNull(),
-      salesCount: integer("salesCount").default(0).notNull(),
-      averageRating: decimal("averageRating", { precision: 3, scale: 2 }).default("0"),
-      reviewsCount: integer("reviewsCount").default(0).notNull(),
-      createdAt: timestamp("createdAt").defaultNow().notNull(),
-      updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-      publishedAt: timestamp("publishedAt")
-    }, (table) => ({
-      creatorIdx: index("digital_creator_id_idx").on(table.creatorId),
-      slugIdx: index("digital_slug_idx").on(table.slug),
-      statusIdx: index("digital_status_idx").on(table.status)
-    }));
-    digitalPurchases = pgTable("digitalPurchases", {
-      id: serial("id").primaryKey(),
-      productId: integer("productId").notNull(),
-      userId: integer("userId").notNull(),
-      orderId: integer("orderId"),
-      pricePaidCents: integer("pricePaidCents").notNull(),
-      downloadCount: integer("downloadCount").default(0).notNull(),
-      lastDownloadedAt: timestamp("lastDownloadedAt"),
-      createdAt: timestamp("createdAt").defaultNow().notNull()
-    }, (table) => ({
-      productIdx: index("purchase_product_id_idx").on(table.productId),
-      userIdx: index("purchase_user_id_idx").on(table.userId),
-      uniquePurchase: unique("unique_purchase").on(table.productId, table.userId)
-    }));
-    notifications = pgTable("notifications", {
-      id: serial("id").primaryKey(),
-      userId: integer("userId").notNull(),
-      type: varchar("type", { length: 50 }).notNull(),
-      // 'like', 'comment', 'follow', 'purchase', etc.
-      title: varchar("title", { length: 255 }).notNull(),
-      message: text("message"),
-      linkUrl: varchar("linkUrl", { length: 500 }),
-      isRead: boolean("isRead").default(false).notNull(),
-      metadata: json("metadata"),
-      // Additional data
-      createdAt: timestamp("createdAt").defaultNow().notNull()
-    }, (table) => ({
-      userIdx: index("notification_user_id_idx").on(table.userId),
-      readIdx: index("notification_is_read_idx").on(table.isRead),
-      createdAtIdx: index("notification_created_at_idx").on(table.createdAt)
-    }));
-  }
-});
-
-// server/db.ts
-var db_exports = {};
-__export(db_exports, {
-  getDb: () => getDb,
-  getUserByOpenId: () => getUserByOpenId,
-  upsertUser: () => upsertUser
-});
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      const client = postgres(process.env.DATABASE_URL);
-      _db = drizzle(client);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
-  }
-  return _db;
-}
-async function upsertUser(user) {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-  try {
-    const values = {
-      openId: user.openId
-    };
-    const updateSet = {};
-    const textFields = ["name", "email", "loginMethod"];
-    const assignNullable = (field) => {
-      const value = user[field];
-      if (value === void 0) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-    textFields.forEach(assignNullable);
-    if (user.lastSignedIn !== void 0) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== void 0) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    }
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = /* @__PURE__ */ new Date();
-    }
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = /* @__PURE__ */ new Date();
-    }
-    await db.insert(users).values(values).onConflictDoUpdate({
-      target: users.openId,
-      set: updateSet
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
-}
-async function getUserByOpenId(openId) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return void 0;
-  }
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-  return result.length > 0 ? result[0] : void 0;
-}
-var _db;
-var init_db = __esm({
-  "server/db.ts"() {
-    "use strict";
-    init_schema();
-    _db = null;
-  }
-});
-
-// api/index.ts
+// server/_core/index.ts
+import "dotenv/config";
+import express2 from "express";
+import { createServer } from "http";
+import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-
-// server/supabase.ts
-import { createClient } from "@supabase/supabase-js";
-var supabaseUrl = process.env.VITE_SUPABASE_URL;
-var supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables");
-}
-var supabase = createClient(supabaseUrl, supabaseAnonKey);
-async function getSupabaseUser(accessToken) {
-  const { data, error } = await supabase.auth.getUser(accessToken);
-  if (error) {
-    console.error("[Supabase] Error getting user:", error);
-    return null;
-  }
-  return data.user;
-}
-
-// server/_core/context.ts
-init_db();
-async function createContext(opts) {
-  let user = null;
-  const req = opts.req;
-  const res = opts.res;
-  try {
-    const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith("Bearer ")) {
-      const accessToken = authHeader.substring(7);
-      const supabaseUser = await getSupabaseUser(accessToken);
-      if (supabaseUser) {
-        const dbUser = await getUserByOpenId(supabaseUser.id);
-        if (dbUser) {
-          user = dbUser;
-        } else {
-          await upsertUser({
-            openId: supabaseUser.id,
-            name: supabaseUser.user_metadata?.name || null,
-            email: supabaseUser.email ?? null,
-            loginMethod: supabaseUser.app_metadata?.provider ?? "email",
-            lastSignedIn: /* @__PURE__ */ new Date()
-          });
-          user = await getUserByOpenId(supabaseUser.id) ?? null;
-        }
-      }
-    }
-  } catch (error) {
-    console.error("[Auth] Error authenticating request:", error);
-    user = null;
-  }
-  return {
-    req,
-    res,
-    user
-  };
-}
-
-// server/_core/oauth.ts
-function registerOAuthRoutes(app2) {
-  app2.get("/api/oauth/callback", (_req, res) => {
-    res.redirect("/");
-  });
-}
 
 // shared/const.ts
 var COOKIE_NAME = "app_session_id";
@@ -831,123 +190,290 @@ var systemRouter = router({
 // server/routers-products.ts
 import { z as z3 } from "zod";
 
+// server/supabase.ts
+import { createClient } from "@supabase/supabase-js";
+var supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+var supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+var supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Missing Supabase environment variables");
+}
+var supabase = createClient(supabaseUrl, supabaseAnonKey);
+var supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+}) : null;
+async function getSupabaseUser(accessToken) {
+  const { data, error } = await supabase.auth.getUser(accessToken);
+  if (error || !data.user) {
+    if (error) console.error("[Supabase] Error validating user token:", error);
+    return null;
+  }
+  return data.user;
+}
+
 // server/db-products.ts
-init_db();
-init_schema();
-import { eq as eq2 } from "drizzle-orm";
 async function getActiveProducts() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(products).where(eq2(products.active, true));
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("products").select("*").eq("active", true);
+  if (error) {
+    console.error("[Database] Error fetching active products:", error);
+    return [];
+  }
+  return data || [];
 }
 async function getProductBySlug(slug) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(products).where(eq2(products.slug, slug)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("products").select("*").eq("slug", slug).limit(1).single();
+  if (error) {
+    if (error.code !== "PGRST116") {
+      console.error("[Database] Error fetching product by slug:", error);
+    }
+    return null;
+  }
+  return data;
 }
 async function getProductById(id) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(products).where(eq2(products.id, id)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("products").select("*").eq("id", id).limit(1).single();
+  if (error) {
+    if (error.code !== "PGRST116") {
+      console.error("[Database] Error fetching product by id:", error);
+    }
+    return null;
+  }
+  return data;
 }
 async function createOrder(orderData) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(orders).values(orderData).returning({ id: orders.id });
-  return result[0].id;
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data, error } = await supabaseAdmin.from("orders").insert({
+    ...orderData,
+    status: orderData.status || "AGUARDANDO_PAGAMENTO",
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating order:", error);
+    throw error;
+  }
+  return data.id;
 }
 async function createOrderItems(items) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.insert(orderItems).values(items);
+  if (!supabaseAdmin) throw new Error("Database not available");
+  if (items.length === 0) return;
+  const itemsWithTimestamp = items.map((item) => ({
+    ...item,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+  }));
+  const { error } = await supabaseAdmin.from("orderItems").insert(itemsWithTimestamp);
+  if (error) {
+    console.error("[Database] Error creating order items:", error);
+    throw error;
+  }
 }
 async function createAddress(addressData) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(addresses).values(addressData).returning({ id: addresses.id });
-  return result[0].id;
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data, error } = await supabaseAdmin.from("addresses").insert({
+    ...addressData,
+    isDefault: addressData.isDefault ?? false,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating address:", error);
+    throw error;
+  }
+  return data.id;
 }
 async function getUserAddresses(userId) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(addresses).where(eq2(addresses.userId, userId));
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("addresses").select("*").eq("userId", userId);
+  if (error) {
+    console.error("[Database] Error fetching user addresses:", error);
+    return [];
+  }
+  return data || [];
 }
 async function getUserOrders(userId) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(orders).where(eq2(orders.userId, userId));
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("orders").select("*").eq("userId", userId).order("createdAt", { ascending: false });
+  if (error) {
+    console.error("[Database] Error fetching user orders:", error);
+    return [];
+  }
+  return data || [];
 }
 async function getOrderById(orderId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(orders).where(eq2(orders.id, orderId)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).limit(1).single();
+  if (error) {
+    if (error.code !== "PGRST116") {
+      console.error("[Database] Error fetching order:", error);
+    }
+    return null;
+  }
+  return data;
 }
 async function getOrderItems(orderId) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(orderItems).where(eq2(orderItems.orderId, orderId));
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("orderItems").select("*").eq("orderId", orderId);
+  if (error) {
+    console.error("[Database] Error fetching order items:", error);
+    return [];
+  }
+  return data || [];
 }
 async function updateUserProfile(userId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(users).set(data).where(eq2(users.id, userId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("users").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", userId);
+  if (error) {
+    console.error("[Database] Error updating user profile:", error);
+    throw error;
+  }
 }
 async function getUserById(userId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(users).where(eq2(users.id, userId)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("users").select("*").eq("id", userId).limit(1).single();
+  if (error) {
+    if (error.code !== "PGRST116") {
+      console.error("[Database] Error fetching user:", error);
+    }
+    return null;
+  }
+  return data;
 }
 async function updateAddress(addressId, userId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const existing = await db.select().from(addresses).where(eq2(addresses.id, addressId)).limit(1);
-  if (existing.length === 0 || existing[0].userId !== userId) {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: existing, error: fetchError } = await supabaseAdmin.from("addresses").select("*").eq("id", addressId).single();
+  if (fetchError || !existing || existing.userId !== userId) {
     throw new Error("Address not found");
   }
   if (data.isDefault) {
-    await db.update(addresses).set({ isDefault: false }).where(eq2(addresses.userId, userId));
+    await supabaseAdmin.from("addresses").update({ isDefault: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).eq("userId", userId);
   }
-  await db.update(addresses).set(data).where(eq2(addresses.id, addressId));
+  const { error } = await supabaseAdmin.from("addresses").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", addressId);
+  if (error) {
+    console.error("[Database] Error updating address:", error);
+    throw error;
+  }
 }
 async function deleteAddress(addressId, userId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const existing = await db.select().from(addresses).where(eq2(addresses.id, addressId)).limit(1);
-  if (existing.length === 0 || existing[0].userId !== userId) {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: existing, error: fetchError } = await supabaseAdmin.from("addresses").select("*").eq("id", addressId).single();
+  if (fetchError || !existing || existing.userId !== userId) {
     throw new Error("Address not found");
   }
-  await db.delete(addresses).where(eq2(addresses.id, addressId));
+  const { error } = await supabaseAdmin.from("addresses").delete().eq("id", addressId);
+  if (error) {
+    console.error("[Database] Error deleting address:", error);
+    throw error;
+  }
 }
 async function getOrderWithTracking(orderId, userId) {
-  const db = await getDb();
-  if (!db) return null;
-  const orderResult = await db.select().from(orders).where(eq2(orders.id, orderId)).limit(1);
-  if (orderResult.length === 0 || orderResult[0].userId !== userId) {
+  if (!supabaseAdmin) return null;
+  const { data: order, error: orderError } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
+  if (orderError || !order || order.userId !== userId) {
     return null;
   }
-  const order = orderResult[0];
-  const items = await db.select().from(orderItems).where(eq2(orderItems.orderId, orderId));
-  const shipmentResult = await db.select().from(shipments).where(eq2(shipments.orderId, orderId)).limit(1);
+  const { data: items } = await supabaseAdmin.from("orderItems").select("*").eq("orderId", orderId);
+  const { data: shipment } = await supabaseAdmin.from("shipments").select("*").eq("orderId", orderId).limit(1).single();
   return {
     ...order,
-    items,
-    shipment: shipmentResult.length > 0 ? shipmentResult[0] : null
+    items: items || [],
+    shipment: shipment || null
   };
 }
 async function decrementProductStock(productId, quantity) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!supabaseAdmin) throw new Error("Database not available");
   const product = await getProductById(productId);
   if (!product) throw new Error("Product not found");
   const currentStock = product.stockQuantity ?? 0;
   if (currentStock < quantity) {
     throw new Error("Insufficient stock");
   }
-  await db.update(products).set({ stockQuantity: currentStock - quantity }).where(eq2(products.id, productId));
+  const { error } = await supabaseAdmin.from("products").update({
+    stockQuantity: currentStock - quantity,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", productId);
+  if (error) {
+    console.error("[Database] Error decrementing stock:", error);
+    throw error;
+  }
+}
+async function getCreatorProducts(creatorId) {
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("products").select("*").eq("creatorId", creatorId).order("createdAt", { ascending: false });
+  if (error) {
+    console.error("[Database] Error fetching creator products:", error);
+    return [];
+  }
+  return data || [];
+}
+async function createProduct(data) {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("products").insert({
+    ...data,
+    active: true,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("*").single();
+  if (error) {
+    console.error("[Database] Error creating product:", error);
+    throw error;
+  }
+  return result;
+}
+async function updateProduct(productId, creatorId, data) {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: existing, error: fetchError } = await supabaseAdmin.from("products").select("*").eq("id", productId).eq("creatorId", creatorId).single();
+  if (fetchError || !existing) {
+    throw new Error("Produto n\xE3o encontrado ou voc\xEA n\xE3o tem permiss\xE3o");
+  }
+  const { data: result, error } = await supabaseAdmin.from("products").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", productId).select("*").single();
+  if (error) {
+    console.error("[Database] Error updating product:", error);
+    throw error;
+  }
+  return result;
+}
+async function deleteCreatorProduct(productId, creatorId) {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: existing, error: fetchError } = await supabaseAdmin.from("products").select("id").eq("id", productId).eq("creatorId", creatorId).single();
+  if (fetchError || !existing) {
+    throw new Error("Produto n\xE3o encontrado ou voc\xEA n\xE3o tem permiss\xE3o");
+  }
+  const { error } = await supabaseAdmin.from("products").delete().eq("id", productId);
+  if (error) {
+    console.error("[Database] Error deleting product:", error);
+    throw error;
+  }
+}
+async function toggleProductActive(productId, creatorId) {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: existing, error: fetchError } = await supabaseAdmin.from("products").select("*").eq("id", productId).eq("creatorId", creatorId).single();
+  if (fetchError || !existing) {
+    throw new Error("Produto n\xE3o encontrado ou voc\xEA n\xE3o tem permiss\xE3o");
+  }
+  const { data: result, error } = await supabaseAdmin.from("products").update({
+    active: !existing.active,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", productId).select("*").single();
+  if (error) {
+    console.error("[Database] Error toggling product active:", error);
+    throw error;
+  }
+  return result;
 }
 
 // server/services/tracking.ts
@@ -1423,7 +949,7 @@ function orderConfirmationEmail(data) {
 </body>
 </html>
   `;
-  const text2 = `
+  const text = `
 HAYAH LIVROS - Pedido Confirmado!
 
 Ol\xE1 ${data.customerName},
@@ -1455,7 +981,7 @@ Hayah Livros
   return {
     subject: `Pedido #${data.orderId} confirmado - Hayah Livros`,
     html,
-    text: text2
+    text
   };
 }
 function orderStatusUpdateEmail(data) {
@@ -1549,7 +1075,7 @@ function orderStatusUpdateEmail(data) {
 </body>
 </html>
   `;
-  const text2 = `
+  const text = `
 HAYAH LIVROS - Atualiza\xE7\xE3o do Pedido #${data.orderId}
 
 Ol\xE1 ${data.customerName},
@@ -1568,7 +1094,7 @@ Hayah Livros
   return {
     subject: `Pedido #${data.orderId} - ${statusInfo.label}`,
     html,
-    text: text2
+    text
   };
 }
 
@@ -1633,12 +1159,7 @@ var productsRouter = router({
   }),
   // Creator endpoints
   myProducts: protectedProcedure.query(async ({ ctx }) => {
-    const { getDb: getDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const db = await getDb2();
-    if (!db) throw new Error("Database not available");
-    const { products: products2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq6, desc: desc4 } = await import("drizzle-orm");
-    return await db.select().from(products2).where(eq6(products2.creatorId, ctx.user.id)).orderBy(desc4(products2.createdAt));
+    return await getCreatorProducts(ctx.user.id);
   }),
   create: protectedProcedure.input(z3.object({
     productType: z3.enum(["physical", "digital"]),
@@ -1657,20 +1178,24 @@ var productsRouter = router({
     fileUrl: z3.string().optional(),
     fileType: z3.string().optional()
   })).mutation(async ({ input, ctx }) => {
-    const { getDb: getDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const db = await getDb2();
-    if (!db) throw new Error("Database not available");
-    const { products: products2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const slug = input.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").substring(0, 200);
-    const [product] = await db.insert(products2).values({
+    return await createProduct({
       creatorId: ctx.user.id,
       slug,
-      ...input,
+      productType: input.productType,
+      name: input.name,
+      description: input.description,
+      priceCents: input.priceCents,
+      compareAtPriceCents: input.compareAtPriceCents,
+      imageUrl: input.imageUrl,
+      stockQuantity: input.stockQuantity,
+      weightGrams: input.weightGrams,
       widthCm: input.widthCm?.toString(),
       heightCm: input.heightCm?.toString(),
-      depthCm: input.depthCm?.toString()
-    }).returning();
-    return product;
+      depthCm: input.depthCm?.toString(),
+      fileUrl: input.fileUrl,
+      fileType: input.fileType
+    });
   }),
   update: protectedProcedure.input(z3.object({
     productId: z3.number(),
@@ -1689,59 +1214,20 @@ var productsRouter = router({
     fileUrl: z3.string().optional(),
     fileType: z3.string().optional()
   })).mutation(async ({ input, ctx }) => {
-    const { getDb: getDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const db = await getDb2();
-    if (!db) throw new Error("Database not available");
-    const { products: products2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq6, and: and3 } = await import("drizzle-orm");
     const { productId, ...updates } = input;
-    const [product] = await db.select().from(products2).where(and3(
-      eq6(products2.id, productId),
-      eq6(products2.creatorId, ctx.user.id)
-    ));
-    if (!product) {
-      throw new Error("Produto n\xE3o encontrado ou voc\xEA n\xE3o tem permiss\xE3o");
-    }
-    const [updated] = await db.update(products2).set({
+    return await updateProduct(productId, ctx.user.id, {
       ...updates,
       widthCm: updates.widthCm?.toString(),
       heightCm: updates.heightCm?.toString(),
-      depthCm: updates.depthCm?.toString(),
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq6(products2.id, productId)).returning();
-    return updated;
+      depthCm: updates.depthCm?.toString()
+    });
   }),
   delete: protectedProcedure.input(z3.object({ productId: z3.number() })).mutation(async ({ input, ctx }) => {
-    const { getDb: getDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const db = await getDb2();
-    if (!db) throw new Error("Database not available");
-    const { products: products2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq6, and: and3 } = await import("drizzle-orm");
-    const [product] = await db.select().from(products2).where(and3(
-      eq6(products2.id, input.productId),
-      eq6(products2.creatorId, ctx.user.id)
-    ));
-    if (!product) {
-      throw new Error("Produto n\xE3o encontrado ou voc\xEA n\xE3o tem permiss\xE3o");
-    }
-    await db.delete(products2).where(eq6(products2.id, input.productId));
+    await deleteCreatorProduct(input.productId, ctx.user.id);
     return { success: true };
   }),
   toggleActive: protectedProcedure.input(z3.object({ productId: z3.number() })).mutation(async ({ input, ctx }) => {
-    const { getDb: getDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const db = await getDb2();
-    if (!db) throw new Error("Database not available");
-    const { products: products2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq6, and: and3 } = await import("drizzle-orm");
-    const [product] = await db.select().from(products2).where(and3(
-      eq6(products2.id, input.productId),
-      eq6(products2.creatorId, ctx.user.id)
-    ));
-    if (!product) {
-      throw new Error("Produto n\xE3o encontrado ou voc\xEA n\xE3o tem permiss\xE3o");
-    }
-    const [updated] = await db.update(products2).set({ active: !product.active, updatedAt: /* @__PURE__ */ new Date() }).where(eq6(products2.id, input.productId)).returning();
-    return updated;
+    return await toggleProductActive(input.productId, ctx.user.id);
   })
 });
 var checkoutRouter = router({
@@ -2032,181 +1518,268 @@ import { z as z4 } from "zod";
 import { TRPCError as TRPCError3 } from "@trpc/server";
 
 // server/db-admin.ts
-init_db();
-init_schema();
-import { eq as eq3, desc } from "drizzle-orm";
 async function getAllOrders() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(orders);
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("orders").select("*").order("createdAt", { ascending: false });
+  if (error) {
+    console.error("[Database] Error fetching all orders:", error);
+    return [];
+  }
+  return data || [];
 }
 async function updateOrderStatus(orderId, status) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const updateData = { status };
-  if (status === "PAGO" && !updateData.paidAt) {
-    updateData.paidAt = /* @__PURE__ */ new Date();
-  } else if (status === "POSTADO" && !updateData.shippedAt) {
-    updateData.shippedAt = /* @__PURE__ */ new Date();
-  } else if (status === "ENTREGUE" && !updateData.deliveredAt) {
-    updateData.deliveredAt = /* @__PURE__ */ new Date();
-  } else if (status === "CANCELADO" && !updateData.cancelledAt) {
-    updateData.cancelledAt = /* @__PURE__ */ new Date();
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const updateData = {
+    status,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  if (status === "PAGO") {
+    updateData.paidAt = (/* @__PURE__ */ new Date()).toISOString();
+  } else if (status === "POSTADO") {
+    updateData.shippedAt = (/* @__PURE__ */ new Date()).toISOString();
+  } else if (status === "ENTREGUE") {
+    updateData.deliveredAt = (/* @__PURE__ */ new Date()).toISOString();
+  } else if (status === "CANCELADO") {
+    updateData.cancelledAt = (/* @__PURE__ */ new Date()).toISOString();
   }
-  await db.update(orders).set(updateData).where(eq3(orders.id, orderId));
+  const { error } = await supabaseAdmin.from("orders").update(updateData).eq("id", orderId);
+  if (error) {
+    console.error("[Database] Error updating order status:", error);
+    throw error;
+  }
 }
 async function updateOrderAdminNotes(orderId, adminNotes) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(orders).set({ adminNotes }).where(eq3(orders.id, orderId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("orders").update({
+    adminNotes,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", orderId);
+  if (error) {
+    console.error("[Database] Error updating order admin notes:", error);
+    throw error;
+  }
 }
 async function getAllUsers() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(users).orderBy(desc(users.createdAt));
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("users").select("*").order("createdAt", { ascending: false });
+  if (error) {
+    console.error("[Database] Error fetching all users:", error);
+    return [];
+  }
+  return data || [];
 }
 async function updateUser(userId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(users).set(data).where(eq3(users.id, userId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("users").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", userId);
+  if (error) {
+    console.error("[Database] Error updating user:", error);
+    throw error;
+  }
 }
 async function getOrderWithUser(orderId) {
-  const db = await getDb();
-  if (!db) return null;
-  const orderResult = await db.select().from(orders).where(eq3(orders.id, orderId)).limit(1);
-  if (orderResult.length === 0) return null;
-  const order = orderResult[0];
-  const userResult = await db.select().from(users).where(eq3(users.id, order.userId)).limit(1);
-  const items = await db.select().from(orderItems).where(eq3(orderItems.orderId, orderId));
+  if (!supabaseAdmin) return null;
+  const { data: order, error: orderError } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).single();
+  if (orderError || !order) return null;
+  const { data: user } = await supabaseAdmin.from("users").select("*").eq("id", order.userId).single();
+  const { data: items } = await supabaseAdmin.from("orderItems").select("*").eq("orderId", orderId);
   return {
     ...order,
-    user: userResult.length > 0 ? userResult[0] : null,
-    items
+    user: user || null,
+    items: items || []
   };
 }
 async function getShipmentByOrderId(orderId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(shipments).where(eq3(shipments.orderId, orderId)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("shipments").select("*").eq("orderId", orderId).single();
+  if (error) return null;
+  return data;
 }
 async function updateShipmentTracking(orderId, trackingCode, trackingUrl) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!supabaseAdmin) throw new Error("Database not available");
   const existing = await getShipmentByOrderId(orderId);
   if (existing) {
-    await db.update(shipments).set({
+    const { error } = await supabaseAdmin.from("shipments").update({
       trackingCode,
       trackingUrl,
-      status: "ETIQUETA_GERADA"
-    }).where(eq3(shipments.orderId, orderId));
+      status: "ETIQUETA_GERADA",
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("orderId", orderId);
+    if (error) {
+      console.error("[Database] Error updating shipment tracking:", error);
+      throw error;
+    }
   } else {
-    const order = await db.select().from(orders).where(eq3(orders.id, orderId)).limit(1);
-    if (order.length === 0) throw new Error("Order not found");
-    await db.insert(shipments).values({
+    const { data: order, error: orderError } = await supabaseAdmin.from("orders").select("shippingPriceCents").eq("id", orderId).single();
+    if (orderError || !order) throw new Error("Order not found");
+    const { error } = await supabaseAdmin.from("shipments").insert({
       orderId,
       shippingMethod: "PAC",
-      shippingPriceCents: order[0].shippingPriceCents,
+      shippingPriceCents: order.shippingPriceCents,
       trackingCode,
       trackingUrl,
-      status: "ETIQUETA_GERADA"
+      status: "ETIQUETA_GERADA",
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
     });
+    if (error) {
+      console.error("[Database] Error creating shipment with tracking:", error);
+      throw error;
+    }
   }
 }
 async function updateShipmentStatus(orderId, status) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const updateData = { status };
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const updateData = {
+    status,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
   if (status === "POSTADO") {
-    updateData.postedAt = /* @__PURE__ */ new Date();
+    updateData.postedAt = (/* @__PURE__ */ new Date()).toISOString();
   } else if (status === "ENTREGUE") {
-    updateData.deliveredAt = /* @__PURE__ */ new Date();
+    updateData.deliveredAt = (/* @__PURE__ */ new Date()).toISOString();
   }
-  await db.update(shipments).set(updateData).where(eq3(shipments.orderId, orderId));
+  const { error } = await supabaseAdmin.from("shipments").update(updateData).eq("orderId", orderId);
+  if (error) {
+    console.error("[Database] Error updating shipment status:", error);
+    throw error;
+  }
 }
 async function getAllProducts() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(products);
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("products").select("*").order("createdAt", { ascending: false });
+  if (error) {
+    console.error("[Database] Error fetching all products:", error);
+    return [];
+  }
+  return data || [];
 }
 async function updateProductStock(productId, quantity) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(products).set({ stockQuantity: quantity }).where(eq3(products.id, productId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("products").update({
+    stockQuantity: quantity,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", productId);
+  if (error) {
+    console.error("[Database] Error updating product stock:", error);
+    throw error;
+  }
 }
-async function updateProduct(productId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(products).set(data).where(eq3(products.id, productId));
-}
-async function createProduct(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(products).values({
+async function updateProduct2(productId, data) {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("products").update({
     ...data,
-    active: true
-  }).returning({ id: products.id });
-  return result[0].id;
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", productId);
+  if (error) {
+    console.error("[Database] Error updating product:", error);
+    throw error;
+  }
+}
+async function createProduct2(data) {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("products").insert({
+    ...data,
+    active: true,
+    productType: "physical",
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating product:", error);
+    throw error;
+  }
+  return result.id;
 }
 async function deleteProduct(productId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(products).where(eq3(products.id, productId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("products").delete().eq("id", productId);
+  if (error) {
+    console.error("[Database] Error deleting product:", error);
+    throw error;
+  }
 }
 async function getAllPosts() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    id: posts.id,
-    content: posts.content,
-    createdAt: posts.createdAt,
-    creatorName: creatorProfiles.displayName,
-    creatorId: creatorProfiles.id
-  }).from(posts).leftJoin(creatorProfiles, eq3(posts.creatorId, creatorProfiles.id)).orderBy(desc(posts.createdAt));
+  if (!supabaseAdmin) return [];
+  const { data: posts, error } = await supabaseAdmin.from("posts").select("id, content, createdAt, creatorId").order("createdAt", { ascending: false });
+  if (error || !posts) return [];
+  const creatorIds = [...new Set(posts.map((p) => p.creatorId))];
+  const { data: creators } = await supabaseAdmin.from("creatorProfiles").select("id, displayName").in("id", creatorIds);
+  const creatorsMap = new Map((creators || []).map((c) => [c.id, c]));
+  return posts.map((post) => ({
+    id: post.id,
+    content: post.content,
+    createdAt: post.createdAt,
+    creatorName: creatorsMap.get(post.creatorId)?.displayName || null,
+    creatorId: post.creatorId
+  }));
 }
 async function adminDeletePost(postId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(posts).where(eq3(posts.id, postId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  await supabaseAdmin.from("postMedia").delete().eq("postId", postId);
+  await supabaseAdmin.from("postLikes").delete().eq("postId", postId);
+  const { data: comments } = await supabaseAdmin.from("postComments").select("id").eq("postId", postId);
+  if (comments && comments.length > 0) {
+    const commentIds = comments.map((c) => c.id);
+    await supabaseAdmin.from("commentLikes").delete().in("commentId", commentIds);
+  }
+  await supabaseAdmin.from("postComments").delete().eq("postId", postId);
+  const { error } = await supabaseAdmin.from("posts").delete().eq("id", postId);
+  if (error) {
+    console.error("[Database] Error deleting post:", error);
+    throw error;
+  }
 }
 async function getAllComments() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    id: postComments.id,
-    content: postComments.content,
-    createdAt: postComments.createdAt,
-    postId: postComments.postId,
-    userName: users.name,
-    userId: users.id
-  }).from(postComments).leftJoin(users, eq3(postComments.userId, users.id)).orderBy(desc(postComments.createdAt));
+  if (!supabaseAdmin) return [];
+  const { data: comments, error } = await supabaseAdmin.from("postComments").select("id, content, createdAt, postId, userId").order("createdAt", { ascending: false });
+  if (error || !comments) return [];
+  const userIds = [...new Set(comments.map((c) => c.userId))];
+  const { data: users } = await supabaseAdmin.from("users").select("id, name").in("id", userIds);
+  const usersMap = new Map((users || []).map((u) => [u.id, u]));
+  return comments.map((comment) => ({
+    id: comment.id,
+    content: comment.content,
+    createdAt: comment.createdAt,
+    postId: comment.postId,
+    userName: usersMap.get(comment.userId)?.name || null,
+    userId: comment.userId
+  }));
 }
 async function adminDeleteComment(commentId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(postComments).where(eq3(postComments.id, commentId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  await supabaseAdmin.from("commentLikes").delete().eq("commentId", commentId);
+  const { error } = await supabaseAdmin.from("postComments").delete().eq("id", commentId);
+  if (error) {
+    console.error("[Database] Error deleting comment:", error);
+    throw error;
+  }
 }
 async function getAllCourses() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    course: courses,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName
-    }
-  }).from(courses).leftJoin(creatorProfiles, eq3(courses.creatorId, creatorProfiles.id)).orderBy(desc(courses.createdAt));
+  if (!supabaseAdmin) return [];
+  const { data: courses, error } = await supabaseAdmin.from("courses").select("*").order("createdAt", { ascending: false });
+  if (error || !courses) return [];
+  const creatorIds = [...new Set(courses.map((c) => c.creatorId))];
+  const { data: creators } = await supabaseAdmin.from("creatorProfiles").select("id, displayName").in("id", creatorIds);
+  const creatorsMap = new Map((creators || []).map((c) => [c.id, c]));
+  return courses.map((course) => ({
+    course,
+    creator: creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: null }
+  }));
 }
 async function getAllDigitalProducts() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    product: digitalProducts,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName
-    }
-  }).from(digitalProducts).leftJoin(creatorProfiles, eq3(digitalProducts.creatorId, creatorProfiles.id)).orderBy(desc(digitalProducts.createdAt));
+  if (!supabaseAdmin) return [];
+  const { data: products, error } = await supabaseAdmin.from("digitalProducts").select("*").order("createdAt", { ascending: false });
+  if (error || !products) return [];
+  const creatorIds = [...new Set(products.map((p) => p.creatorId))];
+  const { data: creators } = await supabaseAdmin.from("creatorProfiles").select("id, displayName").in("id", creatorIds);
+  const creatorsMap = new Map((creators || []).map((c) => [c.id, c]));
+  return products.map((product) => ({
+    product,
+    creator: creatorsMap.get(product.creatorId) || { id: product.creatorId, displayName: null }
+  }));
 }
 
 // server/routers-admin.ts
@@ -2340,7 +1913,7 @@ var adminRouter = router({
       imageUrl: z4.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { productId, ...data } = input;
-      await updateProduct(productId, data);
+      await updateProduct2(productId, data);
       return { success: true };
     }),
     create: adminProcedure2.input(z4.object({
@@ -2352,7 +1925,7 @@ var adminRouter = router({
       stockQuantity: z4.number().optional(),
       imageUrl: z4.string().optional()
     })).mutation(async ({ input }) => {
-      const productId = await createProduct(input);
+      const productId = await createProduct2(input);
       return { success: true, productId };
     }),
     delete: adminProcedure2.input(z4.object({ productId: z4.number() })).mutation(async ({ input }) => {
@@ -2394,382 +1967,453 @@ var adminRouter = router({
 import { z as z5 } from "zod";
 
 // server/db-social.ts
-init_db();
-init_schema();
-import { eq as eq4, desc as desc2, and, sql, inArray } from "drizzle-orm";
 async function getCreatorProfileByUserId(userId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(creatorProfiles).where(eq4(creatorProfiles.userId, userId)).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("creatorProfiles").select("*").eq("userId", userId).limit(1).single();
+  if (error) {
+    if (error.code !== "PGRST116") {
+      console.error("[Database] Error fetching creator profile:", error);
+    }
+    return null;
+  }
+  return data;
 }
 async function getCreatorProfileById(id) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select({
-    profile: creatorProfiles,
-    user: {
-      id: users.id,
-      name: users.name,
-      email: users.email
-    }
-  }).from(creatorProfiles).leftJoin(users, eq4(creatorProfiles.userId, users.id)).where(eq4(creatorProfiles.id, id)).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data: profile, error: profileError } = await supabaseAdmin.from("creatorProfiles").select("*").eq("id", id).single();
+  if (profileError || !profile) return null;
+  const { data: user } = await supabaseAdmin.from("users").select("id, name, email").eq("id", profile.userId).single();
+  return {
+    profile,
+    user: user || { id: profile.userId, name: null, email: null }
+  };
 }
 async function createCreatorProfile(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(creatorProfiles).values(data).returning({ id: creatorProfiles.id });
-  return result[0].id;
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("creatorProfiles").insert({
+    ...data,
+    status: data.status || "pending",
+    followersCount: 0,
+    postsCount: 0,
+    coursesCount: 0,
+    isVerified: false,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating creator profile:", error);
+    throw error;
+  }
+  return result.id;
 }
 async function updateCreatorProfile(userId, data) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(creatorProfiles).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq4(creatorProfiles.userId, userId));
+  if (!supabaseAdmin) return;
+  const { error } = await supabaseAdmin.from("creatorProfiles").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("userId", userId);
+  if (error) {
+    console.error("[Database] Error updating creator profile:", error);
+  }
 }
 async function getApprovedCreators(limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    profile: creatorProfiles,
-    user: {
-      id: users.id,
-      name: users.name
-    }
-  }).from(creatorProfiles).leftJoin(users, eq4(creatorProfiles.userId, users.id)).where(eq4(creatorProfiles.status, "approved")).orderBy(desc2(creatorProfiles.followersCount)).limit(limit).offset(offset);
+  if (!supabaseAdmin) return [];
+  const { data: profiles, error } = await supabaseAdmin.from("creatorProfiles").select("*").eq("status", "approved").order("followersCount", { ascending: false }).range(offset, offset + limit - 1);
+  if (error || !profiles) return [];
+  const userIds = profiles.map((p) => p.userId);
+  const { data: users } = await supabaseAdmin.from("users").select("id, name").in("id", userIds);
+  const usersMap = new Map((users || []).map((u) => [u.id, u]));
+  return profiles.map((profile) => ({
+    profile,
+    user: usersMap.get(profile.userId) || { id: profile.userId, name: null }
+  }));
 }
 async function followUser(followerId, followingId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(followers).values({ followerId, followingId });
-  await db.update(creatorProfiles).set({
-    followersCount: sql`${creatorProfiles.followersCount} + 1`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(creatorProfiles.userId, followingId));
+  if (!supabaseAdmin) return;
+  const { error: insertError } = await supabaseAdmin.from("followers").insert({
+    followerId,
+    followingId,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  if (insertError) {
+    console.error("[Database] Error following user:", insertError);
+    return;
+  }
+  const { data: profile } = await supabaseAdmin.from("creatorProfiles").select("followersCount").eq("userId", followingId).single();
+  if (profile) {
+    await supabaseAdmin.from("creatorProfiles").update({
+      followersCount: (profile.followersCount || 0) + 1,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("userId", followingId);
+  }
 }
 async function unfollowUser(followerId, followingId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(followers).where(
-    and(
-      eq4(followers.followerId, followerId),
-      eq4(followers.followingId, followingId)
-    )
-  );
-  await db.update(creatorProfiles).set({
-    followersCount: sql`GREATEST(${creatorProfiles.followersCount} - 1, 0)`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(creatorProfiles.userId, followingId));
+  if (!supabaseAdmin) return;
+  const { error: deleteError } = await supabaseAdmin.from("followers").delete().match({ followerId, followingId });
+  if (deleteError) {
+    console.error("[Database] Error unfollowing user:", deleteError);
+    return;
+  }
+  const { data: profile } = await supabaseAdmin.from("creatorProfiles").select("followersCount").eq("userId", followingId).single();
+  if (profile) {
+    await supabaseAdmin.from("creatorProfiles").update({
+      followersCount: Math.max((profile.followersCount || 0) - 1, 0),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("userId", followingId);
+  }
 }
 async function isFollowing(followerId, followingId) {
-  const db = await getDb();
-  if (!db) return false;
-  const result = await db.select().from(followers).where(
-    and(
-      eq4(followers.followerId, followerId),
-      eq4(followers.followingId, followingId)
-    )
-  ).limit(1);
-  return result.length > 0;
+  if (!supabaseAdmin) return false;
+  const { data, error } = await supabaseAdmin.from("followers").select("id").match({ followerId, followingId }).limit(1).single();
+  return !error && !!data;
 }
 async function getFollowers(userId, limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    id: users.id,
-    name: users.name,
-    followedAt: followers.createdAt
-  }).from(followers).innerJoin(users, eq4(followers.followerId, users.id)).where(eq4(followers.followingId, userId)).orderBy(desc2(followers.createdAt)).limit(limit).offset(offset);
+  if (!supabaseAdmin) return [];
+  const { data: followRecords, error } = await supabaseAdmin.from("followers").select("followerId, createdAt").eq("followingId", userId).order("createdAt", { ascending: false }).range(offset, offset + limit - 1);
+  if (error || !followRecords) return [];
+  const followerIds = followRecords.map((f) => f.followerId);
+  const { data: users } = await supabaseAdmin.from("users").select("id, name").in("id", followerIds);
+  const usersMap = new Map((users || []).map((u) => [u.id, u]));
+  return followRecords.map((record) => ({
+    id: usersMap.get(record.followerId)?.id || record.followerId,
+    name: usersMap.get(record.followerId)?.name || null,
+    followedAt: record.createdAt
+  }));
 }
 async function getFollowing(userId, limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    profile: creatorProfiles,
-    user: {
-      id: users.id,
-      name: users.name
-    },
-    followedAt: followers.createdAt
-  }).from(followers).innerJoin(users, eq4(followers.followingId, users.id)).leftJoin(creatorProfiles, eq4(creatorProfiles.userId, users.id)).where(eq4(followers.followerId, userId)).orderBy(desc2(followers.createdAt)).limit(limit).offset(offset);
+  if (!supabaseAdmin) return [];
+  const { data: followRecords, error } = await supabaseAdmin.from("followers").select("followingId, createdAt").eq("followerId", userId).order("createdAt", { ascending: false }).range(offset, offset + limit - 1);
+  if (error || !followRecords) return [];
+  const followingIds = followRecords.map((f) => f.followingId);
+  const { data: users } = await supabaseAdmin.from("users").select("id, name").in("id", followingIds);
+  const { data: profiles } = await supabaseAdmin.from("creatorProfiles").select("*").in("userId", followingIds);
+  const usersMap = new Map((users || []).map((u) => [u.id, u]));
+  const profilesMap = new Map((profiles || []).map((p) => [p.userId, p]));
+  return followRecords.map((record) => ({
+    profile: profilesMap.get(record.followingId) || null,
+    user: usersMap.get(record.followingId) || { id: record.followingId, name: null },
+    followedAt: record.createdAt
+  }));
 }
 async function createPost(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(posts).values(data).returning({ id: posts.id });
-  await db.update(creatorProfiles).set({
-    postsCount: sql`${creatorProfiles.postsCount} + 1`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(creatorProfiles.id, data.creatorId));
-  return result[0].id;
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("posts").insert({
+    ...data,
+    visibility: data.visibility || "public",
+    isPinned: data.isPinned || false,
+    likesCount: 0,
+    commentsCount: 0,
+    sharesCount: 0,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating post:", error);
+    throw error;
+  }
+  const { data: profile } = await supabaseAdmin.from("creatorProfiles").select("postsCount").eq("id", data.creatorId).single();
+  if (profile) {
+    await supabaseAdmin.from("creatorProfiles").update({
+      postsCount: (profile.postsCount || 0) + 1,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", data.creatorId);
+  }
+  return result.id;
 }
 async function addPostMedia(data) {
   if (data.length === 0) return;
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(postMedia).values(data);
+  if (!supabaseAdmin) return;
+  const mediaWithTimestamp = data.map((item) => ({
+    ...item,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+  }));
+  const { error } = await supabaseAdmin.from("postMedia").insert(mediaWithTimestamp);
+  if (error) {
+    console.error("[Database] Error adding post media:", error);
+  }
 }
 async function getPostById(postId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(posts).where(eq4(posts.id, postId)).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("posts").select("*").eq("id", postId).single();
+  if (error) return null;
+  return data;
 }
 async function getPostWithDetails(postId, currentUserId) {
-  const db = await getDb();
-  if (!db) return null;
-  const post = await db.select({
-    post: posts,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName,
-      avatarUrl: creatorProfiles.avatarUrl,
-      userId: creatorProfiles.userId
-    }
-  }).from(posts).innerJoin(creatorProfiles, eq4(posts.creatorId, creatorProfiles.id)).where(eq4(posts.id, postId)).limit(1);
-  if (!post[0]) return null;
-  const media = await db.select().from(postMedia).where(eq4(postMedia.postId, postId)).orderBy(postMedia.orderIndex);
+  if (!supabaseAdmin) return null;
+  const { data: post, error: postError } = await supabaseAdmin.from("posts").select("*").eq("id", postId).single();
+  if (postError || !post) return null;
+  const { data: creator } = await supabaseAdmin.from("creatorProfiles").select("id, displayName, avatarUrl, userId").eq("id", post.creatorId).single();
+  const { data: media } = await supabaseAdmin.from("postMedia").select("*").eq("postId", postId).order("orderIndex", { ascending: true });
   let isLiked = false;
   if (currentUserId) {
-    const like = await db.select().from(postLikes).where(and(eq4(postLikes.postId, postId), eq4(postLikes.userId, currentUserId))).limit(1);
-    isLiked = like.length > 0;
+    const { data: like } = await supabaseAdmin.from("postLikes").select("id").match({ postId, userId: currentUserId }).single();
+    isLiked = !!like;
   }
   return {
-    ...post[0],
-    media,
+    post,
+    creator: creator || { id: post.creatorId, displayName: "Unknown", avatarUrl: null, userId: 0 },
+    media: media || [],
     isLiked
   };
 }
 async function getFeedPosts(currentUserId, limit = 20, offset = 0, feedType = "all") {
-  const db = await getDb();
-  if (!db) return [];
-  let postsResult;
+  if (!supabaseAdmin) return [];
+  let creatorIds = [];
   if (feedType === "following") {
-    const followedUserIds = db.select({ id: followers.followingId }).from(followers).where(eq4(followers.followerId, currentUserId));
-    postsResult = await db.select({
-      post: posts,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-        userId: creatorProfiles.userId
-      }
-    }).from(posts).innerJoin(creatorProfiles, eq4(posts.creatorId, creatorProfiles.id)).where(
-      and(
-        eq4(posts.visibility, "public"),
-        inArray(creatorProfiles.userId, followedUserIds)
-      )
-    ).orderBy(desc2(posts.createdAt)).limit(limit).offset(offset);
-  } else {
-    postsResult = await db.select({
-      post: posts,
-      creator: {
-        id: creatorProfiles.id,
-        displayName: creatorProfiles.displayName,
-        avatarUrl: creatorProfiles.avatarUrl,
-        userId: creatorProfiles.userId
-      }
-    }).from(posts).innerJoin(creatorProfiles, eq4(posts.creatorId, creatorProfiles.id)).where(eq4(posts.visibility, "public")).orderBy(desc2(posts.createdAt)).limit(limit).offset(offset);
+    const { data: following } = await supabaseAdmin.from("followers").select("followingId").eq("followerId", currentUserId);
+    if (!following || following.length === 0) return [];
+    const followedUserIds = following.map((f) => f.followingId);
+    const { data: profiles } = await supabaseAdmin.from("creatorProfiles").select("id").in("userId", followedUserIds);
+    if (!profiles || profiles.length === 0) return [];
+    creatorIds = profiles.map((p) => p.id);
   }
-  const postsWithDetails = await Promise.all(
-    postsResult.map(async (item) => {
-      const media = await db.select().from(postMedia).where(eq4(postMedia.postId, item.post.id)).orderBy(postMedia.orderIndex);
-      const like = await db.select().from(postLikes).where(
-        and(
-          eq4(postLikes.postId, item.post.id),
-          eq4(postLikes.userId, currentUserId)
-        )
-      ).limit(1);
-      return {
-        ...item,
-        media,
-        isLiked: like.length > 0
-      };
-    })
-  );
-  return postsWithDetails;
+  let query = supabaseAdmin.from("posts").select("*").eq("visibility", "public").order("createdAt", { ascending: false }).range(offset, offset + limit - 1);
+  if (feedType === "following" && creatorIds.length > 0) {
+    query = query.in("creatorId", creatorIds);
+  }
+  const { data: posts, error } = await query;
+  if (error || !posts) return [];
+  const postCreatorIds = [...new Set(posts.map((p) => p.creatorId))];
+  const { data: creators } = await supabaseAdmin.from("creatorProfiles").select("id, displayName, avatarUrl, userId").in("id", postCreatorIds);
+  const creatorsMap = new Map((creators || []).map((c) => [c.id, c]));
+  const postIds = posts.map((p) => p.id);
+  const { data: allMedia } = await supabaseAdmin.from("postMedia").select("*").in("postId", postIds).order("orderIndex", { ascending: true });
+  const mediaByPost = /* @__PURE__ */ new Map();
+  (allMedia || []).forEach((m) => {
+    const existing = mediaByPost.get(m.postId) || [];
+    existing.push(m);
+    mediaByPost.set(m.postId, existing);
+  });
+  const { data: likes } = await supabaseAdmin.from("postLikes").select("postId").eq("userId", currentUserId).in("postId", postIds);
+  const likedPostIds = new Set((likes || []).map((l) => l.postId));
+  return posts.map((post) => ({
+    post,
+    creator: creatorsMap.get(post.creatorId) || { id: post.creatorId, displayName: "Unknown", avatarUrl: null, userId: 0 },
+    media: mediaByPost.get(post.id) || [],
+    isLiked: likedPostIds.has(post.id)
+  }));
 }
 async function getCreatorPosts(creatorId, currentUserId, limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  const postsResult = await db.select({
-    post: posts,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName,
-      avatarUrl: creatorProfiles.avatarUrl,
-      userId: creatorProfiles.userId
-    }
-  }).from(posts).innerJoin(creatorProfiles, eq4(posts.creatorId, creatorProfiles.id)).where(eq4(posts.creatorId, creatorId)).orderBy(desc2(posts.isPinned), desc2(posts.createdAt)).limit(limit).offset(offset);
-  const postsWithDetails = await Promise.all(
-    postsResult.map(async (item) => {
-      const media = await db.select().from(postMedia).where(eq4(postMedia.postId, item.post.id)).orderBy(postMedia.orderIndex);
-      let isLiked = false;
-      if (currentUserId) {
-        const like = await db.select().from(postLikes).where(
-          and(
-            eq4(postLikes.postId, item.post.id),
-            eq4(postLikes.userId, currentUserId)
-          )
-        ).limit(1);
-        isLiked = like.length > 0;
-      }
-      return {
-        ...item,
-        media,
-        isLiked
-      };
-    })
-  );
-  return postsWithDetails;
+  if (!supabaseAdmin) return [];
+  const { data: posts, error } = await supabaseAdmin.from("posts").select("*").eq("creatorId", creatorId).order("isPinned", { ascending: false }).order("createdAt", { ascending: false }).range(offset, offset + limit - 1);
+  if (error || !posts) return [];
+  const { data: creator } = await supabaseAdmin.from("creatorProfiles").select("id, displayName, avatarUrl, userId").eq("id", creatorId).single();
+  const postIds = posts.map((p) => p.id);
+  const { data: allMedia } = await supabaseAdmin.from("postMedia").select("*").in("postId", postIds).order("orderIndex", { ascending: true });
+  const mediaByPost = /* @__PURE__ */ new Map();
+  (allMedia || []).forEach((m) => {
+    const existing = mediaByPost.get(m.postId) || [];
+    existing.push(m);
+    mediaByPost.set(m.postId, existing);
+  });
+  let likedPostIds = /* @__PURE__ */ new Set();
+  if (currentUserId) {
+    const { data: likes } = await supabaseAdmin.from("postLikes").select("postId").eq("userId", currentUserId).in("postId", postIds);
+    likedPostIds = new Set((likes || []).map((l) => l.postId));
+  }
+  return posts.map((post) => ({
+    post,
+    creator: creator || { id: creatorId, displayName: "Unknown", avatarUrl: null, userId: 0 },
+    media: mediaByPost.get(post.id) || [],
+    isLiked: likedPostIds.has(post.id)
+  }));
 }
 async function deletePost(postId, creatorId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(postMedia).where(eq4(postMedia.postId, postId));
-  await db.delete(postLikes).where(eq4(postLikes.postId, postId));
-  const comments = await db.select({ id: postComments.id }).from(postComments).where(eq4(postComments.postId, postId));
-  if (comments.length > 0) {
-    await db.delete(commentLikes).where(inArray(commentLikes.commentId, comments.map((c) => c.id)));
-    await db.delete(postComments).where(eq4(postComments.postId, postId));
+  if (!supabaseAdmin) return;
+  await supabaseAdmin.from("postMedia").delete().eq("postId", postId);
+  await supabaseAdmin.from("postLikes").delete().eq("postId", postId);
+  const { data: comments } = await supabaseAdmin.from("postComments").select("id").eq("postId", postId);
+  if (comments && comments.length > 0) {
+    const commentIds = comments.map((c) => c.id);
+    await supabaseAdmin.from("commentLikes").delete().in("commentId", commentIds);
+    await supabaseAdmin.from("postComments").delete().eq("postId", postId);
   }
-  await db.delete(posts).where(eq4(posts.id, postId));
-  await db.update(creatorProfiles).set({
-    postsCount: sql`GREATEST(${creatorProfiles.postsCount} - 1, 0)`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(creatorProfiles.id, creatorId));
+  await supabaseAdmin.from("posts").delete().eq("id", postId);
+  const { data: profile } = await supabaseAdmin.from("creatorProfiles").select("postsCount").eq("id", creatorId).single();
+  if (profile) {
+    await supabaseAdmin.from("creatorProfiles").update({
+      postsCount: Math.max((profile.postsCount || 0) - 1, 0),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", creatorId);
+  }
 }
 async function updatePost(postId, data) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(posts).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq4(posts.id, postId));
+  if (!supabaseAdmin) return;
+  const { error } = await supabaseAdmin.from("posts").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", postId);
+  if (error) {
+    console.error("[Database] Error updating post:", error);
+  }
 }
 async function likePost(postId, userId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(postLikes).values({ postId, userId });
-  await db.update(posts).set({
-    likesCount: sql`${posts.likesCount} + 1`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(posts.id, postId));
+  if (!supabaseAdmin) return;
+  const { error: insertError } = await supabaseAdmin.from("postLikes").insert({
+    postId,
+    userId,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  if (insertError) {
+    console.error("[Database] Error liking post:", insertError);
+    return;
+  }
+  const { data: post } = await supabaseAdmin.from("posts").select("likesCount").eq("id", postId).single();
+  if (post) {
+    await supabaseAdmin.from("posts").update({
+      likesCount: (post.likesCount || 0) + 1,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", postId);
+  }
 }
 async function unlikePost(postId, userId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(postLikes).where(and(eq4(postLikes.postId, postId), eq4(postLikes.userId, userId)));
-  await db.update(posts).set({
-    likesCount: sql`GREATEST(${posts.likesCount} - 1, 0)`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(posts.id, postId));
+  if (!supabaseAdmin) return;
+  const { error: deleteError } = await supabaseAdmin.from("postLikes").delete().match({ postId, userId });
+  if (deleteError) {
+    console.error("[Database] Error unliking post:", deleteError);
+    return;
+  }
+  const { data: post } = await supabaseAdmin.from("posts").select("likesCount").eq("id", postId).single();
+  if (post) {
+    await supabaseAdmin.from("posts").update({
+      likesCount: Math.max((post.likesCount || 0) - 1, 0),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", postId);
+  }
 }
 async function hasLikedPost(postId, userId) {
-  const db = await getDb();
-  if (!db) return false;
-  const result = await db.select().from(postLikes).where(and(eq4(postLikes.postId, postId), eq4(postLikes.userId, userId))).limit(1);
-  return result.length > 0;
+  if (!supabaseAdmin) return false;
+  const { data, error } = await supabaseAdmin.from("postLikes").select("id").match({ postId, userId }).single();
+  return !error && !!data;
 }
 async function createComment(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(postComments).values(data).returning({ id: postComments.id });
-  await db.update(posts).set({
-    commentsCount: sql`${posts.commentsCount} + 1`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(posts.id, data.postId));
-  return result[0].id;
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("postComments").insert({
+    ...data,
+    likesCount: 0,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating comment:", error);
+    throw error;
+  }
+  const { data: post } = await supabaseAdmin.from("posts").select("commentsCount").eq("id", data.postId).single();
+  if (post) {
+    await supabaseAdmin.from("posts").update({
+      commentsCount: (post.commentsCount || 0) + 1,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", data.postId);
+  }
+  return result.id;
 }
 async function getPostComments(postId, currentUserId, limit = 50, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  const commentsResult = await db.select({
-    comment: postComments,
-    user: {
-      id: users.id,
-      name: users.name
-    }
-  }).from(postComments).innerJoin(users, eq4(postComments.userId, users.id)).where(eq4(postComments.postId, postId)).orderBy(desc2(postComments.createdAt)).limit(limit).offset(offset);
-  const commentsWithLikes = await Promise.all(
-    commentsResult.map(async (item) => {
-      let isLiked = false;
-      if (currentUserId) {
-        const like = await db.select().from(commentLikes).where(
-          and(
-            eq4(commentLikes.commentId, item.comment.id),
-            eq4(commentLikes.userId, currentUserId)
-          )
-        ).limit(1);
-        isLiked = like.length > 0;
-      }
-      return { ...item, isLiked };
-    })
-  );
-  return commentsWithLikes;
+  if (!supabaseAdmin) return [];
+  const { data: comments, error } = await supabaseAdmin.from("postComments").select("*").eq("postId", postId).order("createdAt", { ascending: false }).range(offset, offset + limit - 1);
+  if (error || !comments) return [];
+  const userIds = [...new Set(comments.map((c) => c.userId))];
+  const { data: users } = await supabaseAdmin.from("users").select("id, name").in("id", userIds);
+  const usersMap = new Map((users || []).map((u) => [u.id, u]));
+  let likedCommentIds = /* @__PURE__ */ new Set();
+  if (currentUserId) {
+    const commentIds = comments.map((c) => c.id);
+    const { data: likes } = await supabaseAdmin.from("commentLikes").select("commentId").eq("userId", currentUserId).in("commentId", commentIds);
+    likedCommentIds = new Set((likes || []).map((l) => l.commentId));
+  }
+  return comments.map((comment) => ({
+    comment,
+    user: usersMap.get(comment.userId) || { id: comment.userId, name: null },
+    isLiked: likedCommentIds.has(comment.id)
+  }));
 }
 async function deleteComment(commentId, postId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(commentLikes).where(eq4(commentLikes.commentId, commentId));
-  await db.delete(postComments).where(eq4(postComments.id, commentId));
-  await db.update(posts).set({
-    commentsCount: sql`GREATEST(${posts.commentsCount} - 1, 0)`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(posts.id, postId));
+  if (!supabaseAdmin) return;
+  await supabaseAdmin.from("commentLikes").delete().eq("commentId", commentId);
+  await supabaseAdmin.from("postComments").delete().eq("id", commentId);
+  const { data: post } = await supabaseAdmin.from("posts").select("commentsCount").eq("id", postId).single();
+  if (post) {
+    await supabaseAdmin.from("posts").update({
+      commentsCount: Math.max((post.commentsCount || 0) - 1, 0),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", postId);
+  }
 }
 async function likeComment(commentId, userId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(commentLikes).values({ commentId, userId });
-  await db.update(postComments).set({
-    likesCount: sql`${postComments.likesCount} + 1`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(postComments.id, commentId));
+  if (!supabaseAdmin) return;
+  const { error: insertError } = await supabaseAdmin.from("commentLikes").insert({
+    commentId,
+    userId,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  if (insertError) {
+    console.error("[Database] Error liking comment:", insertError);
+    return;
+  }
+  const { data: comment } = await supabaseAdmin.from("postComments").select("likesCount").eq("id", commentId).single();
+  if (comment) {
+    await supabaseAdmin.from("postComments").update({
+      likesCount: (comment.likesCount || 0) + 1,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", commentId);
+  }
 }
 async function unlikeComment(commentId, userId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(commentLikes).where(
-    and(
-      eq4(commentLikes.commentId, commentId),
-      eq4(commentLikes.userId, userId)
-    )
-  );
-  await db.update(postComments).set({
-    likesCount: sql`GREATEST(${postComments.likesCount} - 1, 0)`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq4(postComments.id, commentId));
+  if (!supabaseAdmin) return;
+  const { error: deleteError } = await supabaseAdmin.from("commentLikes").delete().match({ commentId, userId });
+  if (deleteError) {
+    console.error("[Database] Error unliking comment:", deleteError);
+    return;
+  }
+  const { data: comment } = await supabaseAdmin.from("postComments").select("likesCount").eq("id", commentId).single();
+  if (comment) {
+    await supabaseAdmin.from("postComments").update({
+      likesCount: Math.max((comment.likesCount || 0) - 1, 0),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", commentId);
+  }
 }
 async function createNotification(data) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(notifications).values(data);
+  if (!supabaseAdmin) return;
+  const { error } = await supabaseAdmin.from("notifications").insert({
+    ...data,
+    isRead: false,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  if (error) {
+    console.error("[Database] Error creating notification:", error);
+  }
 }
 async function getUserNotifications(userId, limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(notifications).where(eq4(notifications.userId, userId)).orderBy(desc2(notifications.createdAt)).limit(limit).offset(offset);
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("notifications").select("*").eq("userId", userId).order("createdAt", { ascending: false }).range(offset, offset + limit - 1);
+  if (error) {
+    console.error("[Database] Error fetching notifications:", error);
+    return [];
+  }
+  return data || [];
 }
 async function markNotificationAsRead(notificationId, userId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(notifications).set({ isRead: true }).where(
-    and(
-      eq4(notifications.id, notificationId),
-      eq4(notifications.userId, userId)
-    )
-  );
+  if (!supabaseAdmin) return;
+  const { error } = await supabaseAdmin.from("notifications").update({ isRead: true }).match({ id: notificationId, userId });
+  if (error) {
+    console.error("[Database] Error marking notification as read:", error);
+  }
 }
 async function markAllNotificationsAsRead(userId) {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(notifications).set({ isRead: true }).where(eq4(notifications.userId, userId));
+  if (!supabaseAdmin) return;
+  const { error } = await supabaseAdmin.from("notifications").update({ isRead: true }).eq("userId", userId);
+  if (error) {
+    console.error("[Database] Error marking all notifications as read:", error);
+  }
 }
 async function getUnreadNotificationsCount(userId) {
-  const db = await getDb();
-  if (!db) return 0;
-  const result = await db.select({ count: sql`count(*)` }).from(notifications).where(
-    and(eq4(notifications.userId, userId), eq4(notifications.isRead, false))
-  );
-  return result[0]?.count || 0;
+  if (!supabaseAdmin) return 0;
+  const { count, error } = await supabaseAdmin.from("notifications").select("*", { count: "exact", head: true }).eq("userId", userId).eq("isRead", false);
+  if (error) {
+    console.error("[Database] Error counting unread notifications:", error);
+    return 0;
+  }
+  return count || 0;
 }
 
 // server/routers-social.ts
@@ -2908,12 +2552,12 @@ var postsRouter = router({
     });
     if (input.media && input.media.length > 0) {
       await addPostMedia(
-        input.media.map((m, index2) => ({
+        input.media.map((m, index) => ({
           postId,
           mediaUrl: m.mediaUrl,
           mediaType: m.mediaType,
           thumbnailUrl: m.thumbnailUrl,
-          orderIndex: index2
+          orderIndex: index
         }))
       );
     }
@@ -3095,291 +2739,368 @@ var socialRouter = router({
 import { z as z6 } from "zod";
 
 // server/db-courses.ts
-init_db();
-init_schema();
-import { eq as eq5, desc as desc3, and as and2, sql as sql2, inArray as inArray2, asc } from "drizzle-orm";
 async function createCourse(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(courses).values(data).returning({ id: courses.id });
-  await db.update(creatorProfiles).set({
-    coursesCount: sql2`${creatorProfiles.coursesCount} + 1`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq5(creatorProfiles.id, data.creatorId));
-  return result[0].id;
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("courses").insert({
+    ...data,
+    status: data.status || "draft",
+    isFeatured: data.isFeatured || false,
+    lessonsCount: 0,
+    totalDurationMinutes: 0,
+    studentsCount: 0,
+    reviewsCount: 0,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating course:", error);
+    throw error;
+  }
+  const { data: profile } = await supabaseAdmin.from("creatorProfiles").select("coursesCount").eq("id", data.creatorId).single();
+  if (profile) {
+    await supabaseAdmin.from("creatorProfiles").update({
+      coursesCount: (profile.coursesCount || 0) + 1,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", data.creatorId);
+  }
+  return result.id;
 }
 async function updateCourse(courseId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(courses).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq5(courses.id, courseId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("courses").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", courseId);
+  if (error) {
+    console.error("[Database] Error updating course:", error);
+    throw error;
+  }
 }
 async function getCourseById(courseId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(courses).where(eq5(courses.id, courseId)).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("courses").select("*").eq("id", courseId).single();
+  if (error) return null;
+  return data;
 }
 async function getCourseBySlug(slug) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select({
-    course: courses,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName,
-      avatarUrl: creatorProfiles.avatarUrl,
-      userId: creatorProfiles.userId
-    }
-  }).from(courses).innerJoin(creatorProfiles, eq5(courses.creatorId, creatorProfiles.id)).where(eq5(courses.slug, slug)).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data: course, error } = await supabaseAdmin.from("courses").select("*").eq("slug", slug).single();
+  if (error || !course) return null;
+  const { data: creator } = await supabaseAdmin.from("creatorProfiles").select("id, displayName, avatarUrl, userId").eq("id", course.creatorId).single();
+  return {
+    course,
+    creator: creator || { id: course.creatorId, displayName: "Unknown", avatarUrl: null, userId: 0 }
+  };
 }
 async function getCourseWithModules(courseId) {
-  const db = await getDb();
-  if (!db) return null;
+  if (!supabaseAdmin) return null;
   const course = await getCourseById(courseId);
   if (!course) return null;
-  const modules = await db.select().from(courseModules).where(eq5(courseModules.courseId, courseId)).orderBy(asc(courseModules.orderIndex));
+  const { data: modules } = await supabaseAdmin.from("courseModules").select("*").eq("courseId", courseId).order("orderIndex", { ascending: true });
+  if (!modules) return { ...course, modules: [] };
   const modulesWithLessons = await Promise.all(
     modules.map(async (module) => {
-      const lessons = await db.select().from(courseLessons).where(eq5(courseLessons.moduleId, module.id)).orderBy(asc(courseLessons.orderIndex));
-      return { ...module, lessons };
+      const { data: lessons } = await supabaseAdmin.from("courseLessons").select("*").eq("moduleId", module.id).order("orderIndex", { ascending: true });
+      return { ...module, lessons: lessons || [] };
     })
   );
   return { ...course, modules: modulesWithLessons };
 }
 async function getPublishedCourses(limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    course: courses,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName,
-      avatarUrl: creatorProfiles.avatarUrl
+  if (!supabaseAdmin) return [];
+  try {
+    const { data: courses, error } = await supabaseAdmin.from("courses").select("*").eq("status", "published").order("createdAt", { ascending: false }).range(offset, offset + limit - 1);
+    if (error || !courses || courses.length === 0) return [];
+    const creatorIds = [...new Set(courses.map((c) => c.creatorId))];
+    let creatorsMap = /* @__PURE__ */ new Map();
+    if (creatorIds.length > 0) {
+      const { data: creators } = await supabaseAdmin.from("creatorProfiles").select("id, displayName, avatarUrl").in("id", creatorIds);
+      if (creators) {
+        creatorsMap = new Map(creators.map((c) => [c.id, c]));
+      }
     }
-  }).from(courses).innerJoin(creatorProfiles, eq5(courses.creatorId, creatorProfiles.id)).where(eq5(courses.status, "published")).orderBy(desc3(courses.createdAt)).limit(limit).offset(offset);
+    return courses.map((course) => ({
+      course,
+      creator: creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: "Unknown", avatarUrl: null }
+    }));
+  } catch (err) {
+    console.error("[Database] Error in getPublishedCourses:", err);
+    return [];
+  }
 }
 async function getFeaturedCourses(limit = 6) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    course: courses,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName,
-      avatarUrl: creatorProfiles.avatarUrl
+  if (!supabaseAdmin) return [];
+  try {
+    const { data: courses, error } = await supabaseAdmin.from("courses").select("*").eq("status", "published").eq("isFeatured", true).order("studentsCount", { ascending: false }).limit(limit);
+    if (error || !courses || courses.length === 0) return [];
+    const creatorIds = [...new Set(courses.map((c) => c.creatorId))];
+    let creatorsMap = /* @__PURE__ */ new Map();
+    if (creatorIds.length > 0) {
+      const { data: creators } = await supabaseAdmin.from("creatorProfiles").select("id, displayName, avatarUrl").in("id", creatorIds);
+      if (creators) {
+        creatorsMap = new Map(creators.map((c) => [c.id, c]));
+      }
     }
-  }).from(courses).innerJoin(creatorProfiles, eq5(courses.creatorId, creatorProfiles.id)).where(and2(eq5(courses.status, "published"), eq5(courses.isFeatured, true))).orderBy(desc3(courses.studentsCount)).limit(limit);
+    return courses.map((course) => ({
+      course,
+      creator: creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: "Unknown", avatarUrl: null }
+    }));
+  } catch (err) {
+    console.error("[Database] Error in getFeaturedCourses:", err);
+    return [];
+  }
 }
 async function getCreatorCourses(creatorId) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(courses).where(eq5(courses.creatorId, creatorId)).orderBy(desc3(courses.createdAt));
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("courses").select("*").eq("creatorId", creatorId).order("createdAt", { ascending: false });
+  if (error) return [];
+  return data || [];
 }
 async function deleteCourse(courseId, creatorId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const modules = await db.select({ id: courseModules.id }).from(courseModules).where(eq5(courseModules.courseId, courseId));
-  if (modules.length > 0) {
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: modules } = await supabaseAdmin.from("courseModules").select("id").eq("courseId", courseId);
+  if (modules && modules.length > 0) {
     const moduleIds = modules.map((m) => m.id);
-    const lessons = await db.select({ id: courseLessons.id }).from(courseLessons).where(inArray2(courseLessons.moduleId, moduleIds));
-    if (lessons.length > 0) {
-      await db.delete(lessonProgress).where(inArray2(lessonProgress.lessonId, lessons.map((l) => l.id)));
+    const { data: lessons } = await supabaseAdmin.from("courseLessons").select("id").in("moduleId", moduleIds);
+    if (lessons && lessons.length > 0) {
+      const lessonIds = lessons.map((l) => l.id);
+      await supabaseAdmin.from("lessonProgress").delete().in("lessonId", lessonIds);
     }
-    await db.delete(courseLessons).where(inArray2(courseLessons.moduleId, moduleIds));
-    await db.delete(courseModules).where(eq5(courseModules.courseId, courseId));
+    await supabaseAdmin.from("courseLessons").delete().in("moduleId", moduleIds);
+    await supabaseAdmin.from("courseModules").delete().eq("courseId", courseId);
   }
-  await db.delete(courseEnrollments).where(eq5(courseEnrollments.courseId, courseId));
-  await db.delete(courseReviews).where(eq5(courseReviews.courseId, courseId));
-  await db.delete(courses).where(eq5(courses.id, courseId));
-  await db.update(creatorProfiles).set({
-    coursesCount: sql2`GREATEST(${creatorProfiles.coursesCount} - 1, 0)`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq5(creatorProfiles.id, creatorId));
+  await supabaseAdmin.from("courseEnrollments").delete().eq("courseId", courseId);
+  await supabaseAdmin.from("courseReviews").delete().eq("courseId", courseId);
+  await supabaseAdmin.from("courses").delete().eq("id", courseId);
+  const { data: profile } = await supabaseAdmin.from("creatorProfiles").select("coursesCount").eq("id", creatorId).single();
+  if (profile) {
+    await supabaseAdmin.from("creatorProfiles").update({
+      coursesCount: Math.max((profile.coursesCount || 0) - 1, 0),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", creatorId);
+  }
 }
 async function createModule(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(courseModules).values(data).returning({ id: courseModules.id });
-  return result[0].id;
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("courseModules").insert({
+    ...data,
+    lessonsCount: 0,
+    durationMinutes: 0,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating module:", error);
+    throw error;
+  }
+  return result.id;
 }
 async function updateModule(moduleId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(courseModules).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq5(courseModules.id, moduleId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("courseModules").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", moduleId);
+  if (error) {
+    console.error("[Database] Error updating module:", error);
+    throw error;
+  }
 }
 async function getModuleById(moduleId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(courseModules).where(eq5(courseModules.id, moduleId)).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("courseModules").select("*").eq("id", moduleId).single();
+  if (error) return null;
+  return data;
 }
 async function deleteModule(moduleId, courseId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const lessons = await db.select({ id: courseLessons.id }).from(courseLessons).where(eq5(courseLessons.moduleId, moduleId));
-  if (lessons.length > 0) {
-    await db.delete(lessonProgress).where(inArray2(lessonProgress.lessonId, lessons.map((l) => l.id)));
-    await db.delete(courseLessons).where(eq5(courseLessons.moduleId, moduleId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: lessons } = await supabaseAdmin.from("courseLessons").select("id").eq("moduleId", moduleId);
+  if (lessons && lessons.length > 0) {
+    const lessonIds = lessons.map((l) => l.id);
+    await supabaseAdmin.from("lessonProgress").delete().in("lessonId", lessonIds);
+    await supabaseAdmin.from("courseLessons").delete().eq("moduleId", moduleId);
   }
-  await db.delete(courseModules).where(eq5(courseModules.id, moduleId));
+  await supabaseAdmin.from("courseModules").delete().eq("id", moduleId);
   await updateCourseLessonCount(courseId);
 }
 async function reorderModules(courseId, moduleIds) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!supabaseAdmin) throw new Error("Database not available");
   for (let i = 0; i < moduleIds.length; i++) {
-    await db.update(courseModules).set({ orderIndex: i, updatedAt: /* @__PURE__ */ new Date() }).where(
-      and2(
-        eq5(courseModules.id, moduleIds[i]),
-        eq5(courseModules.courseId, courseId)
-      )
-    );
+    await supabaseAdmin.from("courseModules").update({
+      orderIndex: i,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).match({ id: moduleIds[i], courseId });
   }
 }
 async function createLesson(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(courseLessons).values(data).returning({ id: courseLessons.id });
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("courseLessons").insert({
+    ...data,
+    lessonType: data.lessonType || "video",
+    isFree: data.isFree || false,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating lesson:", error);
+    throw error;
+  }
   await updateModuleLessonCount(data.moduleId);
   await updateCourseLessonCount(data.courseId);
-  return result[0].id;
+  return result.id;
 }
 async function updateLesson(lessonId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(courseLessons).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq5(courseLessons.id, lessonId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("courseLessons").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", lessonId);
+  if (error) {
+    console.error("[Database] Error updating lesson:", error);
+    throw error;
+  }
 }
 async function getLessonById(lessonId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(courseLessons).where(eq5(courseLessons.id, lessonId)).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("courseLessons").select("*").eq("id", lessonId).single();
+  if (error) return null;
+  return data;
 }
 async function deleteLesson(lessonId, moduleId, courseId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(lessonProgress).where(eq5(lessonProgress.lessonId, lessonId));
-  await db.delete(courseLessons).where(eq5(courseLessons.id, lessonId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  await supabaseAdmin.from("lessonProgress").delete().eq("lessonId", lessonId);
+  await supabaseAdmin.from("courseLessons").delete().eq("id", lessonId);
   await updateModuleLessonCount(moduleId);
   await updateCourseLessonCount(courseId);
 }
 async function reorderLessons(moduleId, lessonIds) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!supabaseAdmin) throw new Error("Database not available");
   for (let i = 0; i < lessonIds.length; i++) {
-    await db.update(courseLessons).set({ orderIndex: i, updatedAt: /* @__PURE__ */ new Date() }).where(
-      and2(
-        eq5(courseLessons.id, lessonIds[i]),
-        eq5(courseLessons.moduleId, moduleId)
-      )
-    );
+    await supabaseAdmin.from("courseLessons").update({
+      orderIndex: i,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).match({ id: lessonIds[i], moduleId });
   }
 }
 async function updateModuleLessonCount(moduleId) {
-  const db = await getDb();
-  if (!db) return;
-  const lessons = await db.select({
-    count: sql2`count(*)`,
-    duration: sql2`COALESCE(SUM(${courseLessons.videoDurationSeconds}), 0)`
-  }).from(courseLessons).where(eq5(courseLessons.moduleId, moduleId));
-  await db.update(courseModules).set({
-    lessonsCount: lessons[0]?.count || 0,
-    durationMinutes: Math.ceil((lessons[0]?.duration || 0) / 60),
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq5(courseModules.id, moduleId));
+  if (!supabaseAdmin) return;
+  const { data: lessons } = await supabaseAdmin.from("courseLessons").select("videoDurationSeconds").eq("moduleId", moduleId);
+  const count = lessons?.length || 0;
+  const duration = (lessons || []).reduce((sum, l) => sum + (l.videoDurationSeconds || 0), 0);
+  await supabaseAdmin.from("courseModules").update({
+    lessonsCount: count,
+    durationMinutes: Math.ceil(duration / 60),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", moduleId);
 }
 async function updateCourseLessonCount(courseId) {
-  const db = await getDb();
-  if (!db) return;
-  const lessons = await db.select({
-    count: sql2`count(*)`,
-    duration: sql2`COALESCE(SUM(${courseLessons.videoDurationSeconds}), 0)`
-  }).from(courseLessons).where(eq5(courseLessons.courseId, courseId));
-  await db.update(courses).set({
-    lessonsCount: lessons[0]?.count || 0,
-    totalDurationMinutes: Math.ceil((lessons[0]?.duration || 0) / 60),
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq5(courses.id, courseId));
+  if (!supabaseAdmin) return;
+  const { data: lessons } = await supabaseAdmin.from("courseLessons").select("videoDurationSeconds").eq("courseId", courseId);
+  const count = lessons?.length || 0;
+  const duration = (lessons || []).reduce((sum, l) => sum + (l.videoDurationSeconds || 0), 0);
+  await supabaseAdmin.from("courses").update({
+    lessonsCount: count,
+    totalDurationMinutes: Math.ceil(duration / 60),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", courseId);
 }
 async function createEnrollment(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(courseEnrollments).values(data).returning({ id: courseEnrollments.id });
-  await db.update(courses).set({
-    studentsCount: sql2`${courses.studentsCount} + 1`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq5(courses.id, data.courseId));
-  return result[0].id;
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("courseEnrollments").insert({
+    ...data,
+    progressPercent: 0,
+    completedLessonsCount: 0,
+    lastAccessedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating enrollment:", error);
+    throw error;
+  }
+  const { data: course } = await supabaseAdmin.from("courses").select("studentsCount").eq("id", data.courseId).single();
+  if (course) {
+    await supabaseAdmin.from("courses").update({
+      studentsCount: (course.studentsCount || 0) + 1,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", data.courseId);
+  }
+  return result.id;
 }
 async function getEnrollment(courseId, userId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(courseEnrollments).where(
-    and2(
-      eq5(courseEnrollments.courseId, courseId),
-      eq5(courseEnrollments.userId, userId)
-    )
-  ).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("courseEnrollments").select("*").match({ courseId, userId }).single();
+  if (error) return null;
+  return data;
 }
 async function getUserEnrollments(userId) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    enrollment: courseEnrollments,
-    course: courses,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName,
-      avatarUrl: creatorProfiles.avatarUrl
+  if (!supabaseAdmin) return [];
+  try {
+    const { data: enrollments, error } = await supabaseAdmin.from("courseEnrollments").select("*").eq("userId", userId).order("lastAccessedAt", { ascending: false });
+    if (error || !enrollments || enrollments.length === 0) return [];
+    const courseIds = enrollments.map((e) => e.courseId);
+    let coursesMap = /* @__PURE__ */ new Map();
+    let creatorsMap = /* @__PURE__ */ new Map();
+    if (courseIds.length > 0) {
+      const { data: courses } = await supabaseAdmin.from("courses").select("*").in("id", courseIds);
+      if (courses && courses.length > 0) {
+        coursesMap = new Map(courses.map((c) => [c.id, c]));
+        const creatorIds = [...new Set(courses.map((c) => c.creatorId))];
+        if (creatorIds.length > 0) {
+          const { data: creators } = await supabaseAdmin.from("creatorProfiles").select("id, displayName, avatarUrl").in("id", creatorIds);
+          if (creators) {
+            creatorsMap = new Map(creators.map((c) => [c.id, c]));
+          }
+        }
+      }
     }
-  }).from(courseEnrollments).innerJoin(courses, eq5(courseEnrollments.courseId, courses.id)).innerJoin(creatorProfiles, eq5(courses.creatorId, creatorProfiles.id)).where(eq5(courseEnrollments.userId, userId)).orderBy(desc3(courseEnrollments.lastAccessedAt));
+    return enrollments.map((enrollment) => {
+      const course = coursesMap.get(enrollment.courseId);
+      return {
+        enrollment,
+        course: course || null,
+        creator: course ? creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: "Unknown", avatarUrl: null } : null
+      };
+    });
+  } catch (err) {
+    console.error("[Database] Error in getUserEnrollments:", err);
+    return [];
+  }
 }
 async function updateEnrollmentProgress(enrollmentId, courseId) {
-  const db = await getDb();
-  if (!db) return;
-  const totalLessons = await db.select({ count: sql2`count(*)` }).from(courseLessons).where(eq5(courseLessons.courseId, courseId));
-  const completedLessons = await db.select({ count: sql2`count(*)` }).from(lessonProgress).where(
-    and2(
-      eq5(lessonProgress.enrollmentId, enrollmentId),
-      eq5(lessonProgress.isCompleted, true)
-    )
-  );
-  const total = totalLessons[0]?.count || 0;
-  const completed = completedLessons[0]?.count || 0;
+  if (!supabaseAdmin) return;
+  const { count: totalLessons } = await supabaseAdmin.from("courseLessons").select("*", { count: "exact", head: true }).eq("courseId", courseId);
+  const { count: completedLessons } = await supabaseAdmin.from("lessonProgress").select("*", { count: "exact", head: true }).eq("enrollmentId", enrollmentId).eq("isCompleted", true);
+  const total = totalLessons || 0;
+  const completed = completedLessons || 0;
   const progress = total > 0 ? Math.round(completed / total * 100) : 0;
-  await db.update(courseEnrollments).set({
+  await supabaseAdmin.from("courseEnrollments").update({
     progressPercent: progress,
     completedLessonsCount: completed,
-    lastAccessedAt: /* @__PURE__ */ new Date(),
-    completedAt: progress === 100 ? /* @__PURE__ */ new Date() : null,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq5(courseEnrollments.id, enrollmentId));
+    lastAccessedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    completedAt: progress === 100 ? (/* @__PURE__ */ new Date()).toISOString() : null,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", enrollmentId);
 }
 async function updateLessonProgress(lessonId, userId, enrollmentId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const existing = await db.select().from(lessonProgress).where(
-    and2(
-      eq5(lessonProgress.lessonId, lessonId),
-      eq5(lessonProgress.userId, userId)
-    )
-  ).limit(1);
-  if (existing[0]) {
-    await db.update(lessonProgress).set({
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: existing } = await supabaseAdmin.from("lessonProgress").select("*").match({ lessonId, userId }).single();
+  if (existing) {
+    await supabaseAdmin.from("lessonProgress").update({
       ...data,
-      completedAt: data.isCompleted ? /* @__PURE__ */ new Date() : null,
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq5(lessonProgress.id, existing[0].id));
+      completedAt: data.isCompleted ? (/* @__PURE__ */ new Date()).toISOString() : null,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", existing.id);
   } else {
-    await db.insert(lessonProgress).values({
+    await supabaseAdmin.from("lessonProgress").insert({
       lessonId,
       userId,
       enrollmentId,
       watchedSeconds: data.watchedSeconds || 0,
       isCompleted: data.isCompleted || false,
-      completedAt: data.isCompleted ? /* @__PURE__ */ new Date() : null
+      completedAt: data.isCompleted ? (/* @__PURE__ */ new Date()).toISOString() : null,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
     });
   }
   const lesson = await getLessonById(lessonId);
@@ -3388,167 +3109,240 @@ async function updateLessonProgress(lessonId, userId, enrollmentId, data) {
   }
 }
 async function getLessonProgress(lessonId, userId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(lessonProgress).where(
-    and2(
-      eq5(lessonProgress.lessonId, lessonId),
-      eq5(lessonProgress.userId, userId)
-    )
-  ).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("lessonProgress").select("*").match({ lessonId, userId }).single();
+  if (error) return null;
+  return data;
 }
 async function getCourseProgress(enrollmentId) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    lesson: courseLessons,
-    progress: lessonProgress
-  }).from(courseLessons).leftJoin(
-    lessonProgress,
-    and2(
-      eq5(lessonProgress.lessonId, courseLessons.id),
-      eq5(lessonProgress.enrollmentId, enrollmentId)
-    )
-  ).orderBy(asc(courseLessons.orderIndex));
+  if (!supabaseAdmin) return [];
+  const { data: enrollment } = await supabaseAdmin.from("courseEnrollments").select("courseId").eq("id", enrollmentId).single();
+  if (!enrollment) return [];
+  const { data: lessons } = await supabaseAdmin.from("courseLessons").select("*").eq("courseId", enrollment.courseId).order("orderIndex", { ascending: true });
+  if (!lessons) return [];
+  const lessonIds = lessons.map((l) => l.id);
+  const { data: progressRecords } = await supabaseAdmin.from("lessonProgress").select("*").eq("enrollmentId", enrollmentId).in("lessonId", lessonIds);
+  const progressMap = new Map((progressRecords || []).map((p) => [p.lessonId, p]));
+  return lessons.map((lesson) => ({
+    lesson,
+    progress: progressMap.get(lesson.id) || null
+  }));
 }
 async function createReview(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(courseReviews).values({ ...data, isVerified: true }).returning({ id: courseReviews.id });
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("courseReviews").insert({
+    ...data,
+    isVerified: true,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating review:", error);
+    throw error;
+  }
   await updateCourseRating(data.courseId);
-  return result[0].id;
+  return result.id;
 }
 async function updateReview(reviewId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(courseReviews).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq5(courseReviews.id, reviewId));
-  const review = await db.select({ courseId: courseReviews.courseId }).from(courseReviews).where(eq5(courseReviews.id, reviewId)).limit(1);
-  if (review[0]) {
-    await updateCourseRating(review[0].courseId);
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("courseReviews").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", reviewId);
+  if (error) {
+    console.error("[Database] Error updating review:", error);
+    throw error;
+  }
+  const { data: review } = await supabaseAdmin.from("courseReviews").select("courseId").eq("id", reviewId).single();
+  if (review) {
+    await updateCourseRating(review.courseId);
   }
 }
 async function getCourseReviews(courseId, limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    review: courseReviews,
-    user: {
-      id: users.id,
-      name: users.name
+  if (!supabaseAdmin) return [];
+  try {
+    const { data: reviews, error } = await supabaseAdmin.from("courseReviews").select("*").eq("courseId", courseId).order("createdAt", { ascending: false }).range(offset, offset + limit - 1);
+    if (error || !reviews || reviews.length === 0) return [];
+    const userIds = [...new Set(reviews.map((r) => r.userId))];
+    let usersMap = /* @__PURE__ */ new Map();
+    if (userIds.length > 0) {
+      const { data: users } = await supabaseAdmin.from("users").select("id, name").in("id", userIds);
+      if (users) {
+        usersMap = new Map(users.map((u) => [u.id, u]));
+      }
     }
-  }).from(courseReviews).innerJoin(users, eq5(courseReviews.userId, users.id)).where(eq5(courseReviews.courseId, courseId)).orderBy(desc3(courseReviews.createdAt)).limit(limit).offset(offset);
+    return reviews.map((review) => ({
+      review,
+      user: usersMap.get(review.userId) || { id: review.userId, name: null }
+    }));
+  } catch (err) {
+    console.error("[Database] Error in getCourseReviews:", err);
+    return [];
+  }
 }
 async function updateCourseRating(courseId) {
-  const db = await getDb();
-  if (!db) return;
-  const reviews = await db.select({
-    avgRating: sql2`AVG(${courseReviews.rating})`,
-    count: sql2`COUNT(*)`
-  }).from(courseReviews).where(eq5(courseReviews.courseId, courseId));
-  await db.update(courses).set({
-    averageRating: String(reviews[0]?.avgRating?.toFixed(2) || "0"),
-    reviewsCount: reviews[0]?.count || 0,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq5(courses.id, courseId));
+  if (!supabaseAdmin) return;
+  const { data: reviews } = await supabaseAdmin.from("courseReviews").select("rating").eq("courseId", courseId);
+  const count = reviews?.length || 0;
+  const avgRating = count > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / count).toFixed(2) : "0";
+  await supabaseAdmin.from("courses").update({
+    averageRating: avgRating,
+    reviewsCount: count,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", courseId);
 }
 async function createDigitalProduct(data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(digitalProducts).values(data).returning({ id: digitalProducts.id });
-  return result[0].id;
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: result, error } = await supabaseAdmin.from("digitalProducts").insert({
+    ...data,
+    status: data.status || "draft",
+    salesCount: 0,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).select("id").single();
+  if (error) {
+    console.error("[Database] Error creating digital product:", error);
+    throw error;
+  }
+  return result.id;
 }
 async function updateDigitalProduct(productId, data) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(digitalProducts).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq5(digitalProducts.id, productId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { error } = await supabaseAdmin.from("digitalProducts").update({
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  }).eq("id", productId);
+  if (error) {
+    console.error("[Database] Error updating digital product:", error);
+    throw error;
+  }
 }
 async function deleteDigitalProduct(productId, creatorId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.delete(digitalPurchases).where(eq5(digitalPurchases.productId, productId));
-  await db.delete(digitalProducts).where(eq5(digitalProducts.id, productId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  await supabaseAdmin.from("digitalPurchases").delete().eq("productId", productId);
+  await supabaseAdmin.from("digitalProducts").delete().eq("id", productId);
 }
 async function getDigitalProductById(productId) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(digitalProducts).where(eq5(digitalProducts.id, productId)).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.from("digitalProducts").select("*").eq("id", productId).single();
+  if (error) return null;
+  return data;
 }
 async function getDigitalProductBySlug(slug) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select({
-    product: digitalProducts,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName,
-      avatarUrl: creatorProfiles.avatarUrl
-    }
-  }).from(digitalProducts).innerJoin(creatorProfiles, eq5(digitalProducts.creatorId, creatorProfiles.id)).where(eq5(digitalProducts.slug, slug)).limit(1);
-  return result[0] || null;
+  if (!supabaseAdmin) return null;
+  const { data: product, error } = await supabaseAdmin.from("digitalProducts").select("*").eq("slug", slug).single();
+  if (error || !product) return null;
+  const { data: creator } = await supabaseAdmin.from("creatorProfiles").select("id, displayName, avatarUrl").eq("id", product.creatorId).single();
+  return {
+    product,
+    creator: creator || { id: product.creatorId, displayName: "Unknown", avatarUrl: null }
+  };
 }
 async function getPublishedDigitalProducts(limit = 20, offset = 0) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    product: digitalProducts,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName,
-      avatarUrl: creatorProfiles.avatarUrl
+  if (!supabaseAdmin) {
+    console.log("[Database] supabaseAdmin not available");
+    return [];
+  }
+  try {
+    const { data: products, error } = await supabaseAdmin.from("digitalProducts").select("*").eq("status", "published").order("createdAt", { ascending: false }).range(offset, offset + limit - 1);
+    if (error) {
+      console.error("[Database] Error fetching digital products:", error);
+      return [];
     }
-  }).from(digitalProducts).innerJoin(creatorProfiles, eq5(digitalProducts.creatorId, creatorProfiles.id)).where(eq5(digitalProducts.status, "published")).orderBy(desc3(digitalProducts.createdAt)).limit(limit).offset(offset);
+    if (!products || products.length === 0) {
+      return [];
+    }
+    const creatorIds = [...new Set(products.map((p) => p.creatorId))];
+    let creatorsMap = /* @__PURE__ */ new Map();
+    if (creatorIds.length > 0) {
+      const { data: creators, error: creatorsError } = await supabaseAdmin.from("creatorProfiles").select("id, displayName, avatarUrl").in("id", creatorIds);
+      if (creatorsError) {
+        console.error("[Database] Error fetching creators:", creatorsError);
+      } else if (creators) {
+        creatorsMap = new Map(creators.map((c) => [c.id, c]));
+      }
+    }
+    return products.map((product) => ({
+      product,
+      creator: creatorsMap.get(product.creatorId) || { id: product.creatorId, displayName: "Unknown", avatarUrl: null }
+    }));
+  } catch (err) {
+    console.error("[Database] Unexpected error in getPublishedDigitalProducts:", err);
+    return [];
+  }
 }
 async function getCreatorDigitalProducts(creatorId) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(digitalProducts).where(eq5(digitalProducts.creatorId, creatorId)).orderBy(desc3(digitalProducts.createdAt));
+  if (!supabaseAdmin) return [];
+  const { data, error } = await supabaseAdmin.from("digitalProducts").select("*").eq("creatorId", creatorId).order("createdAt", { ascending: false });
+  if (error) return [];
+  return data || [];
 }
 async function createDigitalPurchase(productId, userId, pricePaidCents, orderId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.insert(digitalPurchases).values({
+  if (!supabaseAdmin) throw new Error("Database not available");
+  await supabaseAdmin.from("digitalPurchases").insert({
     productId,
     userId,
     pricePaidCents,
-    orderId
+    orderId: orderId || null,
+    downloadCount: 0,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
   });
-  await db.update(digitalProducts).set({
-    salesCount: sql2`${digitalProducts.salesCount} + 1`,
-    updatedAt: /* @__PURE__ */ new Date()
-  }).where(eq5(digitalProducts.id, productId));
+  const { data: product } = await supabaseAdmin.from("digitalProducts").select("salesCount").eq("id", productId).single();
+  if (product) {
+    await supabaseAdmin.from("digitalProducts").update({
+      salesCount: (product.salesCount || 0) + 1,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", productId);
+  }
 }
 async function getUserDigitalPurchases(userId) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select({
-    purchase: digitalPurchases,
-    product: digitalProducts,
-    creator: {
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName
+  if (!supabaseAdmin) return [];
+  try {
+    const { data: purchases, error } = await supabaseAdmin.from("digitalPurchases").select("*").eq("userId", userId).order("createdAt", { ascending: false });
+    if (error || !purchases || purchases.length === 0) return [];
+    const productIds = purchases.map((p) => p.productId);
+    let productsMap = /* @__PURE__ */ new Map();
+    let creatorsMap = /* @__PURE__ */ new Map();
+    if (productIds.length > 0) {
+      const { data: products } = await supabaseAdmin.from("digitalProducts").select("*").in("id", productIds);
+      if (products && products.length > 0) {
+        productsMap = new Map(products.map((p) => [p.id, p]));
+        const creatorIds = [...new Set(products.map((p) => p.creatorId))];
+        if (creatorIds.length > 0) {
+          const { data: creators } = await supabaseAdmin.from("creatorProfiles").select("id, displayName").in("id", creatorIds);
+          if (creators) {
+            creatorsMap = new Map(creators.map((c) => [c.id, c]));
+          }
+        }
+      }
     }
-  }).from(digitalPurchases).innerJoin(digitalProducts, eq5(digitalPurchases.productId, digitalProducts.id)).innerJoin(creatorProfiles, eq5(digitalProducts.creatorId, creatorProfiles.id)).where(eq5(digitalPurchases.userId, userId)).orderBy(desc3(digitalPurchases.createdAt));
+    return purchases.map((purchase) => {
+      const product = productsMap.get(purchase.productId);
+      return {
+        purchase,
+        product: product || null,
+        creator: product ? creatorsMap.get(product.creatorId) || { id: product.creatorId, displayName: "Unknown" } : null
+      };
+    });
+  } catch (err) {
+    console.error("[Database] Error in getUserDigitalPurchases:", err);
+    return [];
+  }
 }
 async function hasUserPurchasedProduct(productId, userId) {
-  const db = await getDb();
-  if (!db) return false;
-  const result = await db.select().from(digitalPurchases).where(
-    and2(
-      eq5(digitalPurchases.productId, productId),
-      eq5(digitalPurchases.userId, userId)
-    )
-  ).limit(1);
-  return result.length > 0;
+  if (!supabaseAdmin) return false;
+  const { data, error } = await supabaseAdmin.from("digitalPurchases").select("id").match({ productId, userId }).single();
+  return !error && !!data;
 }
 async function incrementDownloadCount(purchaseId) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(digitalPurchases).set({
-    downloadCount: sql2`${digitalPurchases.downloadCount} + 1`,
-    lastDownloadedAt: /* @__PURE__ */ new Date()
-  }).where(eq5(digitalPurchases.id, purchaseId));
+  if (!supabaseAdmin) throw new Error("Database not available");
+  const { data: purchase } = await supabaseAdmin.from("digitalPurchases").select("downloadCount").eq("id", purchaseId).single();
+  if (purchase) {
+    await supabaseAdmin.from("digitalPurchases").update({
+      downloadCount: (purchase.downloadCount || 0) + 1,
+      lastDownloadedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }).eq("id", purchaseId);
+  }
 }
 
 // server/routers-courses.ts
@@ -3985,7 +3779,15 @@ var digitalProductsRouter = router({
       offset: z6.number().min(0).default(0)
     })
   ).query(async ({ input }) => {
-    return await getPublishedDigitalProducts(input.limit, input.offset);
+    try {
+      console.log("[API] Fetching published digital products...");
+      const result = await getPublishedDigitalProducts(input.limit, input.offset);
+      console.log(`[API] Found ${result.length} products.`);
+      return result;
+    } catch (err) {
+      console.error("[API] Error fetching digital products:", err);
+      throw err;
+    }
   }),
   // Get by slug
   getBySlug: publicProcedure.input(z6.object({ slug: z6.string() })).query(async ({ input, ctx }) => {
@@ -4166,30 +3968,300 @@ var appRouter = router({
   marketplace: marketplaceRouter
 });
 
-// api/index.ts
-var app = express();
-app.use(helmet());
-app.use(cors());
-var limiter = rateLimit({
-  windowMs: 15 * 60 * 1e3,
-  // 15 minutes
-  max: 100,
-  // Limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false
+// server/db.ts
+async function checkConnection() {
+  if (!supabaseAdmin) {
+    return false;
+  }
+  try {
+    const { error } = await supabaseAdmin.from("users").select("id").limit(1);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+async function upsertUser(user) {
+  if (!user.openId) {
+    throw new Error("User openId is required for upsert");
+  }
+  if (!supabaseAdmin) {
+    console.warn("[Database] Cannot upsert user: supabaseAdmin not available");
+    return;
+  }
+  try {
+    const { error } = await supabaseAdmin.from("users").upsert({
+      openId: user.openId,
+      name: user.name,
+      email: user.email,
+      loginMethod: user.loginMethod,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      lastSignedIn: user.lastSignedIn ? new Date(user.lastSignedIn).toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
+      role: user.role || "user",
+      active: true
+    }, {
+      onConflict: "openId"
+    });
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.error("[Database] Failed to upsert user:", error);
+    throw error;
+  }
+}
+async function getUserByOpenId(openId) {
+  if (!supabaseAdmin) {
+    console.warn("[Database] Cannot get user: supabaseAdmin not available");
+    return void 0;
+  }
+  const { data, error } = await supabaseAdmin.from("users").select("*").eq("openId", openId).single();
+  if (error) {
+    if (error.code !== "PGRST116") {
+      console.error("[Database] Error fetching user:", error);
+    }
+    return void 0;
+  }
+  return data;
+}
+
+// server/_core/context.ts
+async function createContext(opts) {
+  let user = null;
+  const req = opts.req;
+  const res = opts.res;
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      const accessToken = authHeader.substring(7);
+      console.log(`[Auth] Verifying token: ${accessToken.substring(0, 10)}...`);
+      const supabaseUser = await getSupabaseUser(accessToken);
+      if (!supabaseUser) {
+        console.error("[Auth] Token validation failed. supabaseUser is null.");
+        throw new Error("UNAUTHORIZED_INVALID_TOKEN");
+      }
+      console.log(`[Auth] User verified: ${supabaseUser.id}`);
+      if (supabaseUser) {
+        const dbUser = await getUserByOpenId(supabaseUser.id);
+        if (dbUser) {
+          user = dbUser;
+        } else {
+          await upsertUser({
+            openId: supabaseUser.id,
+            name: supabaseUser.user_metadata?.name || null,
+            email: supabaseUser.email ?? null,
+            loginMethod: supabaseUser.app_metadata?.provider ?? "email",
+            lastSignedIn: /* @__PURE__ */ new Date()
+          });
+          user = await getUserByOpenId(supabaseUser.id) ?? null;
+        }
+      }
+    }
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    if (errMsg === "UNAUTHORIZED_INVALID_TOKEN") {
+      console.error("[Auth] Request rejected: Invalid Token");
+      throw new Error("Unauthorized: Invalid Token");
+    }
+    console.error("[Auth] Error authenticating request:", error);
+    user = null;
+  }
+  return {
+    req,
+    res,
+    user
+  };
+}
+
+// server/_core/vite.ts
+import express from "express";
+import fs from "fs";
+import { nanoid } from "nanoid";
+import path2 from "path";
+import { createServer as createViteServer } from "vite";
+
+// vite.config.ts
+import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { defineConfig } from "vite";
+var plugins = [react(), tailwindcss(), jsxLocPlugin()];
+var vite_config_default = defineConfig({
+  plugins,
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@assets": path.resolve(import.meta.dirname, "attached_assets")
+    }
+  },
+  envDir: path.resolve(import.meta.dirname),
+  root: path.resolve(import.meta.dirname, "client"),
+  publicDir: path.resolve(import.meta.dirname, "client", "public"),
+  build: {
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true
+  },
+  server: {
+    host: true,
+    allowedHosts: [
+      "localhost",
+      "127.0.0.1"
+    ],
+    fs: {
+      strict: true,
+      deny: ["**/.*"]
+    }
+  }
 });
-app.use("/api", limiter);
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
-registerOAuthRoutes(app);
-app.use(
-  "/api/trpc",
-  createExpressMiddleware({
-    router: appRouter,
-    createContext
-  })
-);
-var index_default = app;
-export {
-  index_default as default
-};
+
+// server/_core/vite.ts
+async function setupVite(app, server) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server },
+    allowedHosts: true
+  };
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    server: serverOptions,
+    appType: "custom"
+  });
+  app.use(vite.middlewares);
+  app.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    try {
+      const clientTemplate = path2.resolve(
+        import.meta.dirname,
+        "../..",
+        "client",
+        "index.html"
+      );
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
+function serveStatic(app) {
+  const distPath = process.env.NODE_ENV === "development" ? path2.resolve(import.meta.dirname, "../..", "dist", "public") : path2.resolve(import.meta.dirname, "public");
+  if (!fs.existsSync(distPath)) {
+    console.error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app.use(express.static(distPath));
+  app.use("*", (_req, res) => {
+    res.sendFile(path2.resolve(distPath, "index.html"));
+  });
+}
+
+// server/_core/index.ts
+var allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:3000",
+  "http://localhost:5173"
+].filter(Boolean);
+function isPortAvailable(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.listen(port, () => {
+      server.close(() => resolve(true));
+    });
+    server.on("error", () => resolve(false));
+  });
+}
+async function findAvailablePort(startPort = 3e3) {
+  for (let port = startPort; port < startPort + 20; port++) {
+    if (await isPortAvailable(port)) {
+      return port;
+    }
+  }
+  throw new Error(`No available port found starting from ${startPort}`);
+}
+async function startServer() {
+  const app = express2();
+  const server = createServer(app);
+  app.use(helmet());
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (!origin && process.env.NODE_ENV === "development") {
+        return callback(null, true);
+      }
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  }));
+  const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1e3,
+    // 15 minutes
+    max: 100,
+    // Limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Muitas requisi\xE7\xF5es. Tente novamente em alguns minutos." }
+  });
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1e3,
+    // 15 minutes
+    max: 10,
+    // Limit each IP to 10 auth attempts per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Muitas tentativas de login. Tente novamente em 15 minutos." }
+  });
+  app.use("/api", generalLimiter);
+  app.use(express2.json({ limit: "50mb" }));
+  app.use(express2.urlencoded({ limit: "50mb", extended: true }));
+  app.get("/api/health", async (req, res) => {
+    try {
+      const dbConnected = await checkConnection();
+      res.json({
+        status: dbConnected ? "healthy" : "degraded",
+        database: dbConnected ? "connected" : "disconnected",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "unhealthy",
+        database: "error",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+  });
+  app.use(
+    "/api/trpc",
+    createExpressMiddleware({
+      router: appRouter,
+      createContext
+    })
+  );
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+  const preferredPort = parseInt(process.env.PORT || "3000");
+  const port = await findAvailablePort(preferredPort);
+  if (port !== preferredPort) {
+    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  }
+  server.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}/`);
+  });
+}
+startServer().catch(console.error);
