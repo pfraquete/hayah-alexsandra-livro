@@ -309,54 +309,76 @@ export async function getCourseWithModules(courseId: number) {
 export async function getPublishedCourses(limit = 20, offset = 0) {
   if (!supabaseAdmin) return [];
 
-  const { data: courses, error } = await supabaseAdmin
-    .from('courses')
-    .select('*')
-    .eq('status', 'published')
-    .order('createdAt', { ascending: false })
-    .range(offset, offset + limit - 1);
+  try {
+    const { data: courses, error } = await supabaseAdmin
+      .from('courses')
+      .select('*')
+      .eq('status', 'published')
+      .order('createdAt', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-  if (error || !courses) return [];
+    if (error || !courses || courses.length === 0) return [];
 
-  const creatorIds = [...new Set(courses.map(c => c.creatorId))];
-  const { data: creators } = await supabaseAdmin
-    .from('creatorProfiles')
-    .select('id, displayName, avatarUrl')
-    .in('id', creatorIds);
+    const creatorIds = [...new Set(courses.map(c => c.creatorId))];
 
-  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+    let creatorsMap = new Map<number, { id: number; displayName: string; avatarUrl: string | null }>();
+    if (creatorIds.length > 0) {
+      const { data: creators } = await supabaseAdmin
+        .from('creatorProfiles')
+        .select('id, displayName, avatarUrl')
+        .in('id', creatorIds);
 
-  return courses.map(course => ({
-    course,
-    creator: creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null },
-  }));
+      if (creators) {
+        creatorsMap = new Map(creators.map(c => [c.id, c]));
+      }
+    }
+
+    return courses.map(course => ({
+      course,
+      creator: creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null },
+    }));
+  } catch (err) {
+    console.error("[Database] Error in getPublishedCourses:", err);
+    return [];
+  }
 }
 
 export async function getFeaturedCourses(limit = 6) {
   if (!supabaseAdmin) return [];
 
-  const { data: courses, error } = await supabaseAdmin
-    .from('courses')
-    .select('*')
-    .eq('status', 'published')
-    .eq('isFeatured', true)
-    .order('studentsCount', { ascending: false })
-    .limit(limit);
+  try {
+    const { data: courses, error } = await supabaseAdmin
+      .from('courses')
+      .select('*')
+      .eq('status', 'published')
+      .eq('isFeatured', true)
+      .order('studentsCount', { ascending: false })
+      .limit(limit);
 
-  if (error || !courses) return [];
+    if (error || !courses || courses.length === 0) return [];
 
-  const creatorIds = [...new Set(courses.map(c => c.creatorId))];
-  const { data: creators } = await supabaseAdmin
-    .from('creatorProfiles')
-    .select('id, displayName, avatarUrl')
-    .in('id', creatorIds);
+    const creatorIds = [...new Set(courses.map(c => c.creatorId))];
 
-  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+    let creatorsMap = new Map<number, { id: number; displayName: string; avatarUrl: string | null }>();
+    if (creatorIds.length > 0) {
+      const { data: creators } = await supabaseAdmin
+        .from('creatorProfiles')
+        .select('id, displayName, avatarUrl')
+        .in('id', creatorIds);
 
-  return courses.map(course => ({
-    course,
-    creator: creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null },
-  }));
+      if (creators) {
+        creatorsMap = new Map(creators.map(c => [c.id, c]));
+      }
+    }
+
+    return courses.map(course => ({
+      course,
+      creator: creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null },
+    }));
+  } catch (err) {
+    console.error("[Database] Error in getFeaturedCourses:", err);
+    return [];
+  }
 }
 
 export async function getCreatorCourses(creatorId: number): Promise<Course[]> {
@@ -713,37 +735,55 @@ export async function getEnrollment(courseId: number, userId: number): Promise<C
 export async function getUserEnrollments(userId: number) {
   if (!supabaseAdmin) return [];
 
-  const { data: enrollments, error } = await supabaseAdmin
-    .from('courseEnrollments')
-    .select('*')
-    .eq('userId', userId)
-    .order('lastAccessedAt', { ascending: false });
+  try {
+    const { data: enrollments, error } = await supabaseAdmin
+      .from('courseEnrollments')
+      .select('*')
+      .eq('userId', userId)
+      .order('lastAccessedAt', { ascending: false });
 
-  if (error || !enrollments) return [];
+    if (error || !enrollments || enrollments.length === 0) return [];
 
-  const courseIds = enrollments.map(e => e.courseId);
-  const { data: courses } = await supabaseAdmin
-    .from('courses')
-    .select('*')
-    .in('id', courseIds);
+    const courseIds = enrollments.map(e => e.courseId);
 
-  const creatorIds = [...new Set((courses || []).map(c => c.creatorId))];
-  const { data: creators } = await supabaseAdmin
-    .from('creatorProfiles')
-    .select('id, displayName, avatarUrl')
-    .in('id', creatorIds);
+    let coursesMap = new Map<number, any>();
+    let creatorsMap = new Map<number, { id: number; displayName: string; avatarUrl: string | null }>();
 
-  const coursesMap = new Map((courses || []).map(c => [c.id, c]));
-  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+    if (courseIds.length > 0) {
+      const { data: courses } = await supabaseAdmin
+        .from('courses')
+        .select('*')
+        .in('id', courseIds);
 
-  return enrollments.map(enrollment => {
-    const course = coursesMap.get(enrollment.courseId);
-    return {
-      enrollment,
-      course: course || null,
-      creator: course ? (creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null }) : null,
-    };
-  });
+      if (courses && courses.length > 0) {
+        coursesMap = new Map(courses.map(c => [c.id, c]));
+
+        const creatorIds = [...new Set(courses.map(c => c.creatorId))];
+        if (creatorIds.length > 0) {
+          const { data: creators } = await supabaseAdmin
+            .from('creatorProfiles')
+            .select('id, displayName, avatarUrl')
+            .in('id', creatorIds);
+
+          if (creators) {
+            creatorsMap = new Map(creators.map(c => [c.id, c]));
+          }
+        }
+      }
+    }
+
+    return enrollments.map(enrollment => {
+      const course = coursesMap.get(enrollment.courseId);
+      return {
+        enrollment,
+        course: course || null,
+        creator: course ? (creatorsMap.get(course.creatorId) || { id: course.creatorId, displayName: 'Unknown', avatarUrl: null }) : null,
+      };
+    });
+  } catch (err) {
+    console.error("[Database] Error in getUserEnrollments:", err);
+    return [];
+  }
 }
 
 export async function updateEnrollmentProgress(enrollmentId: number, courseId: number): Promise<void> {
@@ -935,27 +975,38 @@ export async function updateReview(reviewId: number, data: { rating?: number; ti
 export async function getCourseReviews(courseId: number, limit = 20, offset = 0) {
   if (!supabaseAdmin) return [];
 
-  const { data: reviews, error } = await supabaseAdmin
-    .from('courseReviews')
-    .select('*')
-    .eq('courseId', courseId)
-    .order('createdAt', { ascending: false })
-    .range(offset, offset + limit - 1);
+  try {
+    const { data: reviews, error } = await supabaseAdmin
+      .from('courseReviews')
+      .select('*')
+      .eq('courseId', courseId)
+      .order('createdAt', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-  if (error || !reviews) return [];
+    if (error || !reviews || reviews.length === 0) return [];
 
-  const userIds = [...new Set(reviews.map(r => r.userId))];
-  const { data: users } = await supabaseAdmin
-    .from('users')
-    .select('id, name')
-    .in('id', userIds);
+    const userIds = [...new Set(reviews.map(r => r.userId))];
 
-  const usersMap = new Map((users || []).map(u => [u.id, u]));
+    let usersMap = new Map<number, { id: number; name: string | null }>();
+    if (userIds.length > 0) {
+      const { data: users } = await supabaseAdmin
+        .from('users')
+        .select('id, name')
+        .in('id', userIds);
 
-  return reviews.map(review => ({
-    review,
-    user: usersMap.get(review.userId) || { id: review.userId, name: null },
-  }));
+      if (users) {
+        usersMap = new Map(users.map(u => [u.id, u]));
+      }
+    }
+
+    return reviews.map(review => ({
+      review,
+      user: usersMap.get(review.userId) || { id: review.userId, name: null },
+    }));
+  } catch (err) {
+    console.error("[Database] Error in getCourseReviews:", err);
+    return [];
+  }
 }
 
 async function updateCourseRating(courseId: number): Promise<void> {
@@ -1072,29 +1123,53 @@ export async function getDigitalProductBySlug(slug: string) {
 }
 
 export async function getPublishedDigitalProducts(limit = 20, offset = 0) {
-  if (!supabaseAdmin) return [];
+  if (!supabaseAdmin) {
+    console.log("[Database] supabaseAdmin not available");
+    return [];
+  }
 
-  const { data: products, error } = await supabaseAdmin
-    .from('digitalProducts')
-    .select('*')
-    .eq('status', 'published')
-    .order('createdAt', { ascending: false })
-    .range(offset, offset + limit - 1);
+  try {
+    const { data: products, error } = await supabaseAdmin
+      .from('digitalProducts')
+      .select('*')
+      .eq('status', 'published')
+      .order('createdAt', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-  if (error || !products) return [];
+    if (error) {
+      console.error("[Database] Error fetching digital products:", error);
+      return [];
+    }
 
-  const creatorIds = [...new Set(products.map(p => p.creatorId))];
-  const { data: creators } = await supabaseAdmin
-    .from('creatorProfiles')
-    .select('id, displayName, avatarUrl')
-    .in('id', creatorIds);
+    if (!products || products.length === 0) {
+      return [];
+    }
 
-  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+    const creatorIds = [...new Set(products.map(p => p.creatorId))];
 
-  return products.map(product => ({
-    product,
-    creator: creatorsMap.get(product.creatorId) || { id: product.creatorId, displayName: 'Unknown', avatarUrl: null },
-  }));
+    // Only query creators if we have creatorIds
+    let creatorsMap = new Map<number, { id: number; displayName: string; avatarUrl: string | null }>();
+    if (creatorIds.length > 0) {
+      const { data: creators, error: creatorsError } = await supabaseAdmin
+        .from('creatorProfiles')
+        .select('id, displayName, avatarUrl')
+        .in('id', creatorIds);
+
+      if (creatorsError) {
+        console.error("[Database] Error fetching creators:", creatorsError);
+      } else if (creators) {
+        creatorsMap = new Map(creators.map(c => [c.id, c]));
+      }
+    }
+
+    return products.map(product => ({
+      product,
+      creator: creatorsMap.get(product.creatorId) || { id: product.creatorId, displayName: 'Unknown', avatarUrl: null },
+    }));
+  } catch (err) {
+    console.error("[Database] Unexpected error in getPublishedDigitalProducts:", err);
+    return [];
+  }
 }
 
 export async function getCreatorDigitalProducts(creatorId: number): Promise<DigitalProduct[]> {
@@ -1150,37 +1225,55 @@ export async function createDigitalPurchase(
 export async function getUserDigitalPurchases(userId: number) {
   if (!supabaseAdmin) return [];
 
-  const { data: purchases, error } = await supabaseAdmin
-    .from('digitalPurchases')
-    .select('*')
-    .eq('userId', userId)
-    .order('createdAt', { ascending: false });
+  try {
+    const { data: purchases, error } = await supabaseAdmin
+      .from('digitalPurchases')
+      .select('*')
+      .eq('userId', userId)
+      .order('createdAt', { ascending: false });
 
-  if (error || !purchases) return [];
+    if (error || !purchases || purchases.length === 0) return [];
 
-  const productIds = purchases.map(p => p.productId);
-  const { data: products } = await supabaseAdmin
-    .from('digitalProducts')
-    .select('*')
-    .in('id', productIds);
+    const productIds = purchases.map(p => p.productId);
 
-  const creatorIds = [...new Set((products || []).map(p => p.creatorId))];
-  const { data: creators } = await supabaseAdmin
-    .from('creatorProfiles')
-    .select('id, displayName')
-    .in('id', creatorIds);
+    let productsMap = new Map<number, any>();
+    let creatorsMap = new Map<number, { id: number; displayName: string }>();
 
-  const productsMap = new Map((products || []).map(p => [p.id, p]));
-  const creatorsMap = new Map((creators || []).map(c => [c.id, c]));
+    if (productIds.length > 0) {
+      const { data: products } = await supabaseAdmin
+        .from('digitalProducts')
+        .select('*')
+        .in('id', productIds);
 
-  return purchases.map(purchase => {
-    const product = productsMap.get(purchase.productId);
-    return {
-      purchase,
-      product: product || null,
-      creator: product ? (creatorsMap.get(product.creatorId) || { id: product.creatorId, displayName: 'Unknown' }) : null,
-    };
-  });
+      if (products && products.length > 0) {
+        productsMap = new Map(products.map(p => [p.id, p]));
+
+        const creatorIds = [...new Set(products.map(p => p.creatorId))];
+        if (creatorIds.length > 0) {
+          const { data: creators } = await supabaseAdmin
+            .from('creatorProfiles')
+            .select('id, displayName')
+            .in('id', creatorIds);
+
+          if (creators) {
+            creatorsMap = new Map(creators.map(c => [c.id, c]));
+          }
+        }
+      }
+    }
+
+    return purchases.map(purchase => {
+      const product = productsMap.get(purchase.productId);
+      return {
+        purchase,
+        product: product || null,
+        creator: product ? (creatorsMap.get(product.creatorId) || { id: product.creatorId, displayName: 'Unknown' }) : null,
+      };
+    });
+  } catch (err) {
+    console.error("[Database] Error in getUserDigitalPurchases:", err);
+    return [];
+  }
 }
 
 export async function hasUserPurchasedProduct(productId: number, userId: number): Promise<boolean> {
