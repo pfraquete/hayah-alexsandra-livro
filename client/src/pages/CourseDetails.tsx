@@ -236,7 +236,7 @@ export default function CourseDetails() {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-2 pl-4">
-                        {module.lessons?.map((lesson, lessonIndex) => (
+                        {module.lessons?.map((lesson: { id: number; title: string; isFree: boolean; videoDurationSeconds: number | null }, lessonIndex: number) => (
                           <div
                             key={lesson.id}
                             className="flex items-center gap-3 p-2 rounded-lg"

@@ -287,7 +287,7 @@ export default function CoursePlayer() {
                 <ChevronDown className="h-4 w-4 shrink-0" />
               </CollapsibleTrigger>
               <CollapsibleContent className="pl-2">
-                {module.lessons.map((lesson) => (
+                {module.lessons.map((lesson: Lesson) => (
                   <LessonItem key={lesson.id} lesson={lesson} module={module} />
                 ))}
               </CollapsibleContent>

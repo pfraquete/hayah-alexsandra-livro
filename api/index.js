@@ -2850,13 +2850,14 @@ async function getCourseBySlug(slug) {
 }
 async function getCourseWithModules(courseId) {
   if (!supabaseAdmin) return null;
+  const db = supabaseAdmin;
   const course = await getCourseById(courseId);
   if (!course) return null;
-  const { data: modules } = await supabaseAdmin.from("courseModules").select("*").eq("courseId", courseId).order("orderIndex", { ascending: true });
+  const { data: modules } = await db.from("courseModules").select("*").eq("courseId", courseId).order("orderIndex", { ascending: true });
   if (!modules) return { ...course, modules: [] };
   const modulesWithLessons = await Promise.all(
     modules.map(async (module) => {
-      const { data: lessons } = await supabaseAdmin.from("courseLessons").select("*").eq("moduleId", module.id).order("orderIndex", { ascending: true });
+      const { data: lessons } = await db.from("courseLessons").select("*").eq("moduleId", module.id).order("orderIndex", { ascending: true });
       return { ...module, lessons: lessons || [] };
     })
   );

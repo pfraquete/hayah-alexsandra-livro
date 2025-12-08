@@ -12,6 +12,11 @@ export interface Product {
   imageUrl: string | null;
   active: boolean;
   productType: "physical" | "digital";
+  fileType: string | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  depthCm: number | null;
+  weightGrams: number | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -20,13 +25,17 @@ export interface Order {
   id: number;
   userId: number;
   status: string;
+  subtotalCents: number;
+  discountCents: number;
   totalCents: number;
   shippingPriceCents: number;
   addressId: number | null;
+  shippingAddress: Record<string, unknown> | null;
   customerName: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
   customerCpf: string | null;
+  customerNotes: string | null;
   paymentMethod: string | null;
   paymentId: string | null;
   adminNotes: string | null;
@@ -45,6 +54,7 @@ export interface OrderItem {
   productName: string;
   quantity: number;
   unitPriceCents: number;
+  totalPriceCents: number;
   createdAt: Date | null;
 }
 
@@ -82,15 +92,24 @@ export interface Shipment {
 export interface InsertOrder {
   userId: number;
   status?: string;
+  subtotalCents?: number;
+  discountCents?: number;
   totalCents: number;
   shippingPriceCents: number;
   addressId?: number | null;
+  shippingAddress?: Record<string, unknown> | null;
   customerName?: string | null;
   customerEmail?: string | null;
   customerPhone?: string | null;
   customerCpf?: string | null;
+  customerNotes?: string | null;
   paymentMethod?: string | null;
   paymentId?: string | null;
+  adminNotes?: string | null;
+  paidAt?: Date | null;
+  shippedAt?: Date | null;
+  deliveredAt?: Date | null;
+  cancelledAt?: Date | null;
 }
 
 export interface InsertOrderItem {
@@ -99,6 +118,7 @@ export interface InsertOrderItem {
   productName: string;
   quantity: number;
   unitPriceCents: number;
+  totalPriceCents?: number;
 }
 
 export interface InsertAddress {

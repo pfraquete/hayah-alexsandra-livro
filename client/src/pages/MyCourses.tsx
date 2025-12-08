@@ -45,7 +45,7 @@ function EnrollmentCard({
     id: number;
     displayName: string;
     avatarUrl: string | null;
-  };
+  } | null;
 }) {
   const isCompleted = enrollment.completedAt !== null;
 
@@ -77,15 +77,17 @@ function EnrollmentCard({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="font-semibold line-clamp-1">{course.title}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Avatar className="h-5 w-5">
-                  <AvatarImage src={creator.avatarUrl || undefined} />
-                  <AvatarFallback className="text-xs">
-                    {creator.displayName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm text-muted-foreground">{creator.displayName}</span>
-              </div>
+              {creator && (
+                <div className="flex items-center gap-2 mt-1">
+                  <Avatar className="h-5 w-5">
+                    <AvatarImage src={creator.avatarUrl || undefined} />
+                    <AvatarFallback className="text-xs">
+                      {creator.displayName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm text-muted-foreground">{creator.displayName}</span>
+                </div>
+              )}
             </div>
 
             {isCompleted ? (
@@ -155,7 +157,7 @@ function PurchaseCard({
   creator: {
     id: number;
     displayName: string;
-  };
+  } | null;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -178,7 +180,7 @@ function PurchaseCard({
         {/* Content */}
         <div className="flex-1 p-4">
           <h3 className="font-semibold line-clamp-1">{product.title}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{creator.displayName}</p>
+          {creator && <p className="text-sm text-muted-foreground mt-1">{creator.displayName}</p>}
 
           <div className="flex items-center gap-2 mt-2">
             <Badge variant="outline" className="uppercase text-xs">

@@ -1088,7 +1088,7 @@ export default function Admin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {orderDetails.items.map((item) => (
+                      {orderDetails.items.map((item: { id: number; productName: string; quantity: number; totalPriceCents: number }) => (
                         <TableRow key={item.id}>
                           <TableCell>{item.productName}</TableCell>
                           <TableCell className="text-center">{item.quantity}</TableCell>
