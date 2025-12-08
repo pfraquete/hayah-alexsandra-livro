@@ -1,15 +1,11 @@
 // Storage helpers for file uploads using Supabase Storage
-import { createClient } from '@supabase/supabase-js';
-import { ENV } from './_core/env';
+import { supabase, supabaseAdmin } from "./supabase";
 
-// Initialize Supabase client for storage operations
+// Initialize Supabase client for storage operations.
+// Use the service-role client when available to ensure Storage
+// operations bypass RLS and avoid missing session errors.
 function getSupabaseClient() {
-  if (!ENV.supabaseUrl || !ENV.supabaseAnonKey) {
-    throw new Error(
-      "Supabase credentials missing: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY"
-    );
-  }
-  return createClient(ENV.supabaseUrl, ENV.supabaseAnonKey);
+  return supabaseAdmin ?? supabase;
 }
 
 /**
