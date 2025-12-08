@@ -24,6 +24,12 @@ export async function createContext(
       const accessToken = authHeader.substring(7);
       const supabaseUser = await getSupabaseUser(accessToken);
 
+      // STRICT AUTH: If a token is provided, it MUST be valid.
+      // If verification fails, we throw to reject the request immediately (401).
+      if (!supabaseUser) {
+        throw new Error("UNAUTHORIZED_INVALID_TOKEN");
+      }
+
       if (supabaseUser) {
         // Get or create user in our database
         const dbUser = await db.getUserByOpenId(supabaseUser.id);
@@ -44,7 +50,24 @@ export async function createContext(
       }
     }
   } catch (error) {
-    // Authentication is optional for public procedures.
+    // If the error was our explicit UNAUTHORIZED check, we re-throw it or let it bubble up
+    // However, for createContext, throwing might cause a 500 in some adapters depending on config.
+    // Ideally, we want 401. 
+    // If we return user=null, internal logic might still run.
+    // LOG AND RE-THROW if it's an auth failure.
+
+    const errMsg = error instanceof Error ? error.message : String(error);
+
+    if (errMsg === "UNAUTHORIZED_INVALID_TOKEN") {
+      console.error("[Auth] Request rejected: Invalid Token");
+
+      // We set status 401 explicitly if possible, but we are in a helper.
+      // TRPC Express Adapter handles errors.
+      // If we throw here, the request fails. This is what we want for invalid tokens.
+      throw new Error("Unauthorized: Invalid Token");
+    }
+
+    // For other errors (database connection, etc), we might log and proceed as anonymous or fail.
     console.error("[Auth] Error authenticating request:", error);
     user = null;
   }

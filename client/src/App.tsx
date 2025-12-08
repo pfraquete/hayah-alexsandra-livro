@@ -95,12 +95,12 @@ function Router() {
 
       {/* Admin route - has its own internal role check */}
       <Route path={"/admin"}>
-        <ProtectedRoute>
+        <ProtectedRoute allowedRoles={['admin']}>
           <Admin />
         </ProtectedRoute>
       </Route>
       <Route path={"/admin/courses/:courseId"}>
-        <ProtectedRoute>
+        <ProtectedRoute allowedRoles={['admin']}>
           <CourseManager />
         </ProtectedRoute>
       </Route>
