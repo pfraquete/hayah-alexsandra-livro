@@ -250,7 +250,7 @@ import { z as z3 } from "zod";
 import { createClient } from "@supabase/supabase-js";
 var supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 var supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-var supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+var supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables");
 }
