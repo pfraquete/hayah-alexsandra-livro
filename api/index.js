@@ -250,7 +250,7 @@ import { z as z3 } from "zod";
 import { createClient } from "@supabase/supabase-js";
 var supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 var supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-var supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+var supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables");
 }
@@ -2850,13 +2850,14 @@ async function getCourseBySlug(slug) {
 }
 async function getCourseWithModules(courseId) {
   if (!supabaseAdmin) return null;
+  const db = supabaseAdmin;
   const course = await getCourseById(courseId);
   if (!course) return null;
-  const { data: modules } = await supabaseAdmin.from("courseModules").select("*").eq("courseId", courseId).order("orderIndex", { ascending: true });
+  const { data: modules } = await db.from("courseModules").select("*").eq("courseId", courseId).order("orderIndex", { ascending: true });
   if (!modules) return { ...course, modules: [] };
   const modulesWithLessons = await Promise.all(
     modules.map(async (module) => {
-      const { data: lessons } = await supabaseAdmin.from("courseLessons").select("*").eq("moduleId", module.id).order("orderIndex", { ascending: true });
+      const { data: lessons } = await db.from("courseLessons").select("*").eq("moduleId", module.id).order("orderIndex", { ascending: true });
       return { ...module, lessons: lessons || [] };
     })
   );

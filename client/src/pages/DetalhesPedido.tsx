@@ -87,7 +87,7 @@ export default function DetalhesPedido() {
             <div>
               <h1 className="text-4xl font-bold">Pedido #{order.id}</h1>
               <p className="text-muted-foreground mt-1">
-                Realizado em {new Date(order.createdAt).toLocaleDateString('pt-BR', {
+                Realizado em {new Date(order.createdAt || Date.now()).toLocaleDateString('pt-BR', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric',

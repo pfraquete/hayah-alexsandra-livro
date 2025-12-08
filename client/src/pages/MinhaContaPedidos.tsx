@@ -79,7 +79,7 @@ export default function MinhaContaPedidos() {
                       <div>
                         <h3 className="text-lg font-bold">Pedido #{order.id}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(order.createdAt).toLocaleDateString('pt-BR', {
+                          {new Date(order.createdAt || Date.now()).toLocaleDateString('pt-BR', {
                             day: '2-digit',
                             month: 'long',
                             year: 'numeric',

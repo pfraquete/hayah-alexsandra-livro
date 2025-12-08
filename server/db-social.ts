@@ -77,7 +77,7 @@ export interface InsertCreatorProfile {
 
 export interface InsertPost {
   creatorId: number;
-  content: string;
+  content?: string;
   visibility?: "public" | "followers" | "private";
   isPinned?: boolean;
 }
@@ -103,6 +103,7 @@ export interface InsertNotification {
   title: string;
   message: string;
   link?: string | null;
+  linkUrl?: string | null;
 }
 
 // ============================================

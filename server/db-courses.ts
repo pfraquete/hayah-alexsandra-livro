@@ -128,6 +128,7 @@ export interface InsertCourse {
   compareAtPriceCents?: number | null;
   status?: "draft" | "published" | "archived";
   isFeatured?: boolean;
+  publishedAt?: Date | null;
 }
 
 export interface InsertCourseModule {
@@ -153,6 +154,8 @@ export interface InsertCourseLesson {
 export interface InsertCourseEnrollment {
   courseId: number;
   userId: number;
+  orderId?: number | null;
+  pricePaidCents?: number;
 }
 
 export interface InsertCourseReview {
@@ -161,6 +164,7 @@ export interface InsertCourseReview {
   rating: number;
   title?: string | null;
   content?: string | null;
+  enrollmentId?: number | null;
 }
 
 export interface InsertDigitalProduct {
@@ -280,11 +284,12 @@ export async function getCourseBySlug(slug: string) {
 
 export async function getCourseWithModules(courseId: number) {
   if (!supabaseAdmin) return null;
+  const db = supabaseAdmin;
 
   const course = await getCourseById(courseId);
   if (!course) return null;
 
-  const { data: modules } = await supabaseAdmin
+  const { data: modules } = await db
     .from('courseModules')
     .select('*')
     .eq('courseId', courseId)
@@ -294,7 +299,7 @@ export async function getCourseWithModules(courseId: number) {
 
   const modulesWithLessons = await Promise.all(
     modules.map(async (module) => {
-      const { data: lessons } = await supabaseAdmin
+      const { data: lessons } = await db
         .from('courseLessons')
         .select('*')
         .eq('moduleId', module.id)

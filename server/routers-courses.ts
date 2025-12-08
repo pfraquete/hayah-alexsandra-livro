@@ -106,7 +106,7 @@ export const coursesRouter = router({
         // Only show free lessons if not enrolled
         const modulesWithFreeLessons = course.modules.map((module) => ({
           ...module,
-          lessons: module.lessons.map((lesson) => ({
+          lessons: module.lessons.map((lesson: { isFree: boolean; videoUrl: string | null; content: string | null; downloadUrl?: string | null }) => ({
             ...lesson,
             videoUrl: lesson.isFree ? lesson.videoUrl : null,
             content: lesson.isFree ? lesson.content : null,
